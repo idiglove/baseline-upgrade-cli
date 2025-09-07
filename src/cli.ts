@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { Command } from 'commander';
 import { Reporter, ReportData } from './reporter';
 import { RuleEngine, builtinRules, defaultConfig } from './rules';
+import { FileScanner } from './scanner';
 import { version } from '../package.json';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
@@ -131,6 +132,100 @@ program
         scannedFiles: changedFiles,
         totalContentSize: 0,
         errors,
+      };
+
+      const reporter = new Reporter();
+      const output = options.format === 'json'
+        ? reporter.formatJson(reportData)
+        : reporter.formatText(reportData);
+
+      console.log(output);
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Directory scanning command
+program
+  .command('scan')
+  .description('Analyze all files in a directory for modernization opportunities')
+  .argument('[path]', 'path to the directory to analyze', '.')
+  .option('-v, --verbose', 'verbose output')
+  .option('-f, --format <type>', 'output format (text, json)', 'text')
+  .option('--ignore <patterns>', 'comma-separated ignore patterns', 'node_modules/**,*.min.js,dist/**,build/**,.git/**,coverage/**')
+  .option('--extensions <exts>', 'comma-separated file extensions', '.js,.ts,.jsx,.tsx')
+  .option('--max-size <size>', 'maximum file size in KB', '1024')
+  .action(async (scanPath: string, options) => {
+    try {
+      if (options.verbose) {
+        console.log(`🚀 Scanning ${scanPath} for modernization opportunities...`);
+      }
+
+      // Parse options
+      const ignorePatterns = options.ignore.split(',').map((p: string) => p.trim());
+      const extensions = options.extensions.split(',').map((e: string) => e.trim().startsWith('.') ? e.trim() : `.${e.trim()}`);
+      const maxFileSize = parseInt(options.maxSize) * 1024; // Convert KB to bytes
+
+      // Initialize scanner
+      const scanner = new FileScanner({
+        ignorePatterns,
+        extensions,
+        readContents: true,
+        maxFileSize,
+      });
+
+      // Scan directory
+      const scanResult = await scanner.scan(scanPath);
+
+      if (scanResult.errors.length > 0 && options.verbose) {
+        console.log('⚠️  Scan warnings:');
+        scanResult.errors.forEach(error => console.log(`   ${error}`));
+      }
+
+      if (scanResult.fileContents.length === 0) {
+        console.log('No supported files found in the specified directory.');
+        return;
+      }
+
+      if (options.verbose) {
+        console.log(`📂 Found ${scanResult.fileContents.length} files to analyze`);
+      }
+
+      // Initialize rule engine
+      const engine = new RuleEngine(defaultConfig.rules);
+      for (const [ruleId, rule] of Object.entries(builtinRules)) {
+        engine.registerRule(ruleId, rule);
+      }
+
+      const allSuggestions = [];
+      const processErrors = [];
+      let totalContentSize = 0;
+
+      // Analyze each file
+      for (const fileInfo of scanResult.fileContents) {
+        try {
+          const suggestions = engine.analyzeFile(fileInfo.path, fileInfo.content);
+          allSuggestions.push(...suggestions);
+          totalContentSize += fileInfo.size;
+          
+          if (options.verbose) {
+            console.log(`✓ Analyzed ${fileInfo.path} (${suggestions.length} suggestions)`);
+          }
+        } catch (error) {
+          processErrors.push(`Failed to analyze ${fileInfo.path}: ${error}`);
+          if (options.verbose) {
+            console.log(`❌ Failed to analyze ${fileInfo.path}`);
+          }
+        }
+      }
+
+      const reportData: ReportData = {
+        suggestions: allSuggestions,
+        totalFiles: scanResult.fileContents.length,
+        scannedFiles: scanResult.fileContents.map(f => f.path),
+        totalContentSize,
+        errors: [...scanResult.errors, ...processErrors],
       };
 
       const reporter = new Reporter();
