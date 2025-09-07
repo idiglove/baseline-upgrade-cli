@@ -47,7 +47,26 @@ export class FileScanner {
     const result: ScanResult = { files: [], fileContents: [], errors: [] };
 
     try {
-      await this.scanDirectory(path.resolve(targetPath), result);
+      const resolvedPath = path.resolve(targetPath);
+      const stats = await fs.promises.stat(resolvedPath);
+
+      if (stats.isFile()) {
+        // Handle single file
+        if (this.isTargetFile(path.basename(resolvedPath))) {
+          result.files.push(resolvedPath);
+          
+          if (this.readContents) {
+            await this.readFileContent(resolvedPath, result);
+          }
+        } else {
+          result.errors.push(`File type not supported: ${resolvedPath}`);
+        }
+      } else if (stats.isDirectory()) {
+        // Handle directory
+        await this.scanDirectory(resolvedPath, result);
+      } else {
+        result.errors.push(`Path is not a file or directory: ${resolvedPath}`);
+      }
     } catch (error) {
       result.errors.push(`Failed to scan ${targetPath}: ${error}`);
     }

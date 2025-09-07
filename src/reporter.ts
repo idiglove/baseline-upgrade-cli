@@ -1,3 +1,5 @@
+import { ModernizationSuggestion } from './web-features-engine';
+
 export interface Suggestion {
   file: string;
   line: number;
@@ -11,7 +13,7 @@ export interface Suggestion {
 }
 
 export interface ReportData {
-  suggestions: Suggestion[];
+  suggestions: ModernizationSuggestion[];
   totalFiles: number;
   scannedFiles: string[];
   totalContentSize: number;
@@ -30,7 +32,7 @@ export class Reporter {
     );
 
     // Group suggestions by file
-    const suggestionsByFile = new Map<string, Suggestion[]>();
+    const suggestionsByFile = new Map<string, ModernizationSuggestion[]>();
     for (const suggestion of data.suggestions) {
       if (!suggestionsByFile.has(suggestion.file)) {
         suggestionsByFile.set(suggestion.file, []);
@@ -49,14 +51,14 @@ export class Reporter {
           : suggestion.line;
 
         output.push(`  Line ${lineInfo}: ${suggestion.oldCode} → ${suggestion.newCode}`);
-        output.push(`  ${statusEmoji} ${suggestion.message}\n`);
+        output.push(`  ${statusEmoji} ${suggestion.description}\n`);
       }
     }
 
     // Add summary statistics
-    const stableCount = data.suggestions.filter(s => s.baselineStatus === 'stable').length;
-    if (stableCount > 0) {
-      output.push(`💰 ${stableCount} suggestions use Baseline stable features`);
+    const highBaselineCount = data.suggestions.filter(s => s.baselineStatus === 'high').length;
+    if (highBaselineCount > 0) {
+      output.push(`💰 ${highBaselineCount} suggestions use Baseline stable features`);
     }
 
     return output.join('\n');
@@ -66,11 +68,11 @@ export class Reporter {
     return JSON.stringify(data, null, 2);
   }
 
-  private getStatusEmoji(status: string): string {
+  private getStatusEmoji(status: 'high' | 'low' | 'limited' | 'not supported'): string {
     switch (status) {
-      case 'stable':
+      case 'high':
         return '✨';
-      case 'newly-available':
+      case 'low':
         return '🎯';
       case 'limited':
         return '⚠️';

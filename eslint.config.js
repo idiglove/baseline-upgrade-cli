@@ -27,6 +27,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'bin/**'],
+    ignores: ['dist/**', 'node_modules/**', 'bin/**', 'tests/**', '*.min.js'],
   },
 ];
