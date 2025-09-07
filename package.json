@@ -39,6 +39,7 @@
     "@anthropic-ai/sdk": "^0.61.0",
     "commander": "^14.0.0",
     "dotenv": "^17.2.2",
+    "postcss": "^8.5.6",
     "web-features": "^2.47.0"
   },
   "devDependencies": {
