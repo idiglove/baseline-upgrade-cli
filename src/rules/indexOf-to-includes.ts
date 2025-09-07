@@ -17,8 +17,8 @@ export const indexOfToIncludesRule: RuleDefinition = {
         t.isNumericLiteral(node.right.argument) &&
         node.right.argument.value === 1) {
       
-      if (t.isCallExpression(node.left) &&
-          t.isMemberExpression(node.left.callee) &&
+      if ((t.isCallExpression(node.left) || t.isOptionalCallExpression(node.left)) &&
+          (t.isMemberExpression(node.left.callee) || t.isOptionalMemberExpression(node.left.callee)) &&
           t.isIdentifier(node.left.callee.property) &&
           node.left.callee.property.name === 'indexOf') {
         
@@ -28,12 +28,18 @@ export const indexOfToIncludesRule: RuleDefinition = {
         const objectCode = context.sourceCode.slice(node.left.callee.object.start!, node.left.callee.object.end!);
         const argCode = context.sourceCode.slice(node.left.arguments[0].start!, node.left.arguments[0].end!);
         
+        const leftExpressionCode = context.sourceCode.slice(node.left.start!, node.left.end!);
+        const hasOptionalChaining = leftExpressionCode.includes('?.');
+        const newCode = hasOptionalChaining 
+          ? `${objectCode}?.includes(${argCode})`
+          : `${objectCode}.includes(${argCode})`;
+        
         context.report({
           file: context.filename,
           line: loc.start.line,
           column: loc.start.column,
-          oldCode: `${objectCode}.indexOf(${argCode}) !== -1`,
-          newCode: `${objectCode}.includes(${argCode})`,
+          oldCode: leftExpressionCode + ' !== -1',
+          newCode: newCode,
           description: 'Array.includes() is Baseline stable and more readable than indexOf comparison',
           category: 'javascript',
           baselineStatus: 'high',
@@ -49,8 +55,8 @@ export const indexOfToIncludesRule: RuleDefinition = {
         t.isNumericLiteral(node.right) &&
         node.right.value === 0) {
       
-      if (t.isCallExpression(node.left) &&
-          t.isMemberExpression(node.left.callee) &&
+      if ((t.isCallExpression(node.left) || t.isOptionalCallExpression(node.left)) &&
+          (t.isMemberExpression(node.left.callee) || t.isOptionalMemberExpression(node.left.callee)) &&
           t.isIdentifier(node.left.callee.property) &&
           node.left.callee.property.name === 'indexOf') {
         
@@ -60,12 +66,58 @@ export const indexOfToIncludesRule: RuleDefinition = {
         const objectCode = context.sourceCode.slice(node.left.callee.object.start!, node.left.callee.object.end!);
         const argCode = context.sourceCode.slice(node.left.arguments[0].start!, node.left.arguments[0].end!);
         
+        const leftExpressionCode = context.sourceCode.slice(node.left.start!, node.left.end!);
+        const hasOptionalChaining = leftExpressionCode.includes('?.');
+        const newCode = hasOptionalChaining 
+          ? `${objectCode}?.includes(${argCode})`
+          : `${objectCode}.includes(${argCode})`;
+        
         context.report({
           file: context.filename,
           line: loc.start.line,
           column: loc.start.column,
-          oldCode: `${objectCode}.indexOf(${argCode}) >= 0`,
-          newCode: `${objectCode}.includes(${argCode})`,
+          oldCode: leftExpressionCode + ' >= 0',
+          newCode: newCode,
+          description: 'Array.includes() is Baseline stable and more readable than indexOf comparison',
+          category: 'javascript',
+          baselineStatus: 'high',
+          ruleId: 'indexOf-to-includes',
+          severity: 'info'
+        });
+      }
+    }
+    
+    // Pattern: arr.indexOf(item) > -1
+    if (t.isBinaryExpression(node) && 
+        node.operator === '>' &&
+        t.isUnaryExpression(node.right) &&
+        node.right.operator === '-' &&
+        t.isNumericLiteral(node.right.argument) &&
+        node.right.argument.value === 1) {
+      
+      if ((t.isCallExpression(node.left) || t.isOptionalCallExpression(node.left)) &&
+          (t.isMemberExpression(node.left.callee) || t.isOptionalMemberExpression(node.left.callee)) &&
+          t.isIdentifier(node.left.callee.property) &&
+          node.left.callee.property.name === 'indexOf') {
+        
+        const loc = node.loc;
+        if (!loc) return;
+
+        const objectCode = context.sourceCode.slice(node.left.callee.object.start!, node.left.callee.object.end!);
+        const argCode = context.sourceCode.slice(node.left.arguments[0].start!, node.left.arguments[0].end!);
+        
+        const leftExpressionCode = context.sourceCode.slice(node.left.start!, node.left.end!);
+        const hasOptionalChaining = leftExpressionCode.includes('?.');
+        const newCode = hasOptionalChaining 
+          ? `${objectCode}?.includes(${argCode})`
+          : `${objectCode}.includes(${argCode})`;
+        
+        context.report({
+          file: context.filename,
+          line: loc.start.line,
+          column: loc.start.column,
+          oldCode: leftExpressionCode + ' > -1',
+          newCode: newCode,
           description: 'Array.includes() is Baseline stable and more readable than indexOf comparison',
           category: 'javascript',
           baselineStatus: 'high',
