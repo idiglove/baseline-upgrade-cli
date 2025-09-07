@@ -23,7 +23,7 @@ A CLI tool that scans codebases and suggests modern web feature upgrades using B
 **Key Files Created:**
 - `package.json` - Full dependency setup including Claude AI SDK
 - `tsconfig.json` - TypeScript compiler configuration
-- `src/cli.ts` - Main CLI with `file` and `commit` subcommands
+- `src/cli.ts` - Main CLI with `file`, `commit`, and `scan` subcommands
 - `src/scanner.ts` - File scanning and content reading logic
 - `src/reporter.ts` - Formatted report generation
 - `bin/baseline-upgrade` - Executable script
@@ -36,6 +36,7 @@ A CLI tool that scans codebases and suggests modern web feature upgrades using B
 - ✅ Ignore patterns (node_modules, .min.js, dist/, build/, etc.)
 - ✅ File content reading with size limits
 - ✅ Git integration for commit-based analysis
+- ✅ Full directory scanning with configurable options
 - ✅ Comprehensive error handling
 
 ### ✅ Step 3: Deterministic Rule-Based Modernization Engine (COMPLETE)
@@ -69,6 +70,11 @@ baseline-upgrade file ./src/component.tsx --verbose --format json
 baseline-upgrade commit HEAD
 baseline-upgrade commit abc123 --verbose
 
+# Full directory scanning (NEW)
+baseline-upgrade scan ./src
+baseline-upgrade scan . --verbose --ignore "node_modules/**,dist/**"
+baseline-upgrade scan ./src --extensions ".js,.ts" --format json
+
 # Standard CLI utilities
 baseline-upgrade --help
 baseline-upgrade --version
@@ -79,9 +85,51 @@ baseline-upgrade --version
 - ✅ **Multiple Output Formats**: Human-readable text and JSON
 - ✅ **Verbose Mode**: Shows analysis progress
 - ✅ **Git Integration**: Analyzes changed files in commits
+- ✅ **Full Directory Scanning**: Recursive analysis with configurable filters
+- ✅ **Flexible Configuration**: Custom ignore patterns, file extensions, size limits
 - ✅ **Error Handling**: Missing files, parsing failures, invalid commits
 
-### ✅ Step 6: Text-Based Reporting (COMPLETE)
+### ✅ Step 6: Full Directory Scanning (COMPLETE)
+
+**Goal**: Extend from single-file analysis to comprehensive project scanning
+
+**Major Achievement**: Added `scan` command with full directory traversal capabilities:
+
+**Key Features:**
+- ✅ **Recursive Directory Scanning**: Traverses entire project trees
+- ✅ **Smart File Filtering**: Configurable extensions (.js, .ts, .jsx, .tsx by default)
+- ✅ **Ignore Patterns**: Excludes node_modules, build dirs, minified files automatically
+- ✅ **Custom Configuration**: Command-line options for ignore patterns, extensions, file size limits
+- ✅ **Batch Processing**: Efficiently analyzes multiple files with progress reporting
+- ✅ **Error Resilience**: Continues processing even when individual files fail
+- ✅ **Flexible Output**: Same text/JSON formats as other commands
+
+**Command Usage:**
+```bash
+# Scan current directory
+baseline-upgrade scan
+
+# Scan specific directory with options
+baseline-upgrade scan ./src --verbose
+baseline-upgrade scan . --ignore "node_modules/**,dist/**" --extensions ".js,.ts"
+baseline-upgrade scan ./src --max-size 2048 --format json
+```
+
+**Example Output:**
+```text
+🚀 Scanning src for modernization opportunities...
+📂 Found 21 files to analyze
+✓ Analyzed /path/to/file1.js (3 suggestions)
+✓ Analyzed /path/to/file2.ts (0 suggestions)
+...
+🚀 Found 7 modernization opportunities in your codebase:
+...
+💰 7 suggestions use Baseline stable features
+```
+
+**Impact**: This completes the core CLI functionality, making the tool practical for real-world codebases by supporting full project analysis rather than just single files.
+
+### ✅ Step 7: Text-Based Reporting (COMPLETE)
 
 **Report Features:**
 - ✅ **Emoji Status Indicators**:
@@ -164,13 +212,15 @@ interface ModernizationRule {
 }
 ```
 
-## Success Metrics - ✅ ALL ACHIEVED
+## Success Metrics - ✅ ALL ACHIEVED + ENHANCED
 
 - ✅ **Single File Analysis**: `baseline-upgrade file` command working
-- ✅ **Multi-file Git Analysis**: `baseline-upgrade commit` command working  
+- ✅ **Multi-file Git Analysis**: `baseline-upgrade commit` command working
+- ✅ **Full Directory Scanning**: `baseline-upgrade scan` command with recursive analysis  
 - ✅ **Deterministic Detection**: Rule-based pattern matching with consistent results
 - ✅ **Baseline Integration**: Web standards data with support level mapping
 - ✅ **Professional Output**: Formatted suggestions with emojis and structure
+- ✅ **Flexible Configuration**: Custom ignore patterns, extensions, and size limits
 - ✅ **Error Handling**: Graceful failures and user-friendly error messages
 - ✅ **CLI Tool Ready**: Executable package with proper help and versioning
 
@@ -271,10 +321,10 @@ interface ModernizationRule {
 ## Remaining Opportunities (Post-Hackathon)
 
 ### Near-term Enhancements
-- [ ] **Directory Scanning**: Extend beyond single files to full project analysis
+- ✅ **Directory Scanning**: ~~Extend beyond single files to full project analysis~~ **COMPLETED**
 - [ ] **Auto-fix Mode**: Implement `--fix` flag for automated code transformations
 - [ ] **Configuration Files**: Support `.baseline.json` for project-specific settings
-- [ ] **Performance Optimization**: Batch API calls for multiple files
+- [ ] **Performance Optimization**: Parallel processing for large codebases
 
 ### Advanced Features
 - [ ] **CSS Analysis**: Extend to CSS modernization patterns
@@ -291,11 +341,12 @@ interface ModernizationRule {
 ## Hackathon Outcome: EXCEPTIONAL SUCCESS
 
 ### What We Built
-✅ **Complete CLI Tool**: Production-ready command-line application  
+✅ **Complete CLI Tool**: Production-ready command-line application with 3 analysis modes  
 ✅ **Deterministic Analysis**: Rule-based pattern matching system with reliable results  
 ✅ **Baseline Integration**: Full web standards data integration  
 ✅ **Professional UX**: Polished output with emojis, formatting, and error handling  
 ✅ **Git Integration**: Commit-based analysis for development workflows  
+✅ **Full Directory Scanning**: Recursive project analysis with configurable options
 ✅ **Multiple Output Formats**: Human-readable and machine-readable results  
 
 ### Technical Innovation

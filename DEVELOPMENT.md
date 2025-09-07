@@ -202,17 +202,28 @@ baseline-upgrade file ./src/api.js --format json
 baseline-upgrade file ./src/api.js --config ./custom-rules.json
 ```
 
+### Directory Scanning Options ✅ IMPLEMENTED
+
+```bash
+# Directory scanning
+baseline-upgrade scan .
+baseline-upgrade scan ./src --verbose
+
+# Ignore patterns and extensions
+baseline-upgrade scan . --ignore "*.min.js,vendor/**" --extensions ".js,.ts"
+
+# File size limits and output formats
+baseline-upgrade scan ./src --max-size 2048 --format json
+```
+
 ### Future Options (Not Yet Implemented)
 
 ```bash
-# Directory scanning (planned)
-baseline-upgrade . 
-
-# Ignore patterns (planned)
-baseline-upgrade . --ignore "*.min.js,vendor/**"
-
 # Auto-fix mode (planned)
-baseline-upgrade . --fix
+baseline-upgrade scan . --fix
+
+# Configuration file support (planned)
+baseline-upgrade scan . --config .baseline.json
 ```
 
 ## Technical Decisions
@@ -260,7 +271,7 @@ baseline-upgrade . --fix
 - ✅ Handles common edge cases (missing files, API errors)
 - ✅ Executable as `baseline-upgrade` CLI tool
 - ✅ Git integration for commit-based analysis
-- 🚧 Full directory scanning (single files work, directory planned)
+- ✅ Full directory scanning with configurable options
 
 ## Current Architecture Overview
 
@@ -284,10 +295,36 @@ bin/
 Built files in dist/ directory
 ```
 
+## ✅ MAJOR UPDATE: Full Directory Scanning Complete
+
+**Achievement**: Successfully implemented comprehensive directory scanning functionality, completing a key missing piece of the CLI tool.
+
+**New `scan` Command Features:**
+- **Recursive Directory Traversal**: Scans entire project trees
+- **Configurable File Filtering**: `--extensions` option for custom file types  
+- **Smart Ignore Patterns**: `--ignore` option with sensible defaults
+- **File Size Control**: `--max-size` option to handle large files
+- **Batch Processing**: Efficient analysis of multiple files
+- **Progress Reporting**: Verbose mode shows real-time analysis progress
+- **Consistent Output**: Same text/JSON formats as other commands
+
+**Usage Examples:**
+```bash
+# Scan current directory
+baseline-upgrade scan
+
+# Scan with custom options
+baseline-upgrade scan ./src --verbose --ignore "node_modules/**,dist/**"
+baseline-upgrade scan . --extensions ".js,.ts,.jsx,.tsx" --format json
+```
+
+**Impact**: This completes the core functionality roadmap, making the tool practical for real-world codebase modernization at scale.
+
 ## Next Steps After MVP
 
-1. Add CSS parsing and rules
-2. Implement auto-fix capability
-3. Add interactive mode
-4. Create HTML report generation
-5. Add bundle size impact analysis
+1. ~~Add full directory scanning~~ ✅ **COMPLETED**
+2. Add CSS parsing and rules
+3. Implement auto-fix capability
+4. Add interactive mode
+5. Create HTML report generation
+6. Add bundle size impact analysis
