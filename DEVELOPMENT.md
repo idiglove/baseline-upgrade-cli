@@ -42,9 +42,9 @@
 
 **Expected Output**: Scanner that can find and read all JS/TS files in a project
 
-### Step 3: AI-Powered Modernization Engine ✅ COMPLETE (Prototype)
+### Step 3: AI-Powered Modernization Engine ✅ COMPLETE (Claude RAG-based)
 
-**Goal**: Build scalable AI-powered code analysis using embeddings
+**Goal**: Build scalable AI-powered code analysis using Claude AI with RAG
 
 **Initial Implementation (Manual Rules - Prototype)**:
 - ✅ Set up Babel parser for AST generation
@@ -52,144 +52,238 @@
 - ✅ Implement `var` → `const`/`let`, `XMLHttpRequest` → `fetch()`, `indexOf` → `includes`
 - ✅ Prove concept with 12 suggestions on test code
 
-**Next Phase (AI/Embeddings Approach)**:
+**Current Implementation (Claude RAG Approach) - ✅ COMPLETE**:
 
-**Tasks**:
-
-- Research and implement embeddings-based modernization engine:
-
-  ```typescript
-  class EmbeddingBasedEngine {
-    private embeddings: Float32Array[];     // Pre-computed Baseline features (~5MB)  
-    private patterns: PatternDatabase;      // Known modernization patterns
-    
-    async analyzeCode(code: string): Promise<Suggestion[]> {
-      const codeEmbedding = this.extractEmbedding(code);
-      const similarFeatures = this.findSimilar(codeEmbedding);
-      return this.mapToSuggestions(similarFeatures, code);
-    }
+**Architecture**:
+```typescript
+class ClaudeRAGEngine {
+  private anthropic: Anthropic;              // Claude AI client
+  private trainingData: TrainingExample[];   // Web features training data
+  
+  async analyzeFile(content: string, filePath: string): Promise<ModernizationSuggestion[]> {
+    const relevantExamples = this.findRelevantExamples(content);
+    const ragContext = this.createRAGContext(relevantExamples);
+    return await this.callClaudeWithRAG(content, ragContext);
   }
-  ```
+}
+```
 
-- Install `web-features` package for Baseline data
-- Build embedding model from Baseline features + code patterns
-- Create pattern database with pre-computed embeddings
-- Implement cosine similarity search for pattern matching
-- Add LLM API fallback for low-confidence cases
+**Completed Tasks**:
+- ✅ Install `web-features` package for Baseline data
+- ✅ Build comprehensive training dataset from web-features (1000+ examples)
+- ✅ Implement intelligent pattern matching for RAG context selection
+- ✅ Create Claude prompt engineering with contextual examples
+- ✅ Add semantic scoring for relevance ranking
+- ✅ Support multiple categories: JavaScript, arrays, promises, API patterns
+- ✅ Include Baseline status mapping (high/low/limited support)
 
-**Expected Output**: 5-10MB embeddings model with <100ms inference time
+**Data Generation Pipeline**:
+- ✅ `data-preparation/explore_web_features.js` - Baseline data exploration
+- ✅ `data-preparation/data_driven_generator.js` - Training data generation
+- ✅ Generated 1000+ training examples with code patterns and modernization advice
+- ✅ Semantic keyword extraction from training data for dynamic matching
 
-### Step 4: Baseline Data Integration and Model Training
+**Expected Output**: Claude-powered analysis with contextual training examples
 
-**Goal**: Create embeddings from Baseline web standards data
+### Step 4: Baseline Data Integration and Model Training ✅ COMPLETE
 
-**Tasks**:
+**Goal**: Create training data from Baseline web standards data
 
-- Research `web-features` npm package structure and data format
-- Extract Baseline feature descriptions, compatibility data, and code examples
-- Generate embeddings for each Baseline feature using sentence transformers
-- Map code patterns to Baseline features via semantic similarity
-- Build pattern database with modernization suggestions
-- Include Baseline stability status (stable/newly-available/limited) in suggestions
-- Package embeddings model for distribution (~5-10MB)
+**Completed Tasks**:
+- ✅ Research `web-features` npm package structure and data format
+- ✅ Extract Baseline feature descriptions, compatibility data, and code examples
+- ✅ Generate comprehensive training dataset (1000+ examples) from web-features
+- ✅ Map code patterns to Baseline features via intelligent keyword matching
+- ✅ Build pattern database with modernization suggestions and contextual examples
+- ✅ Include Baseline stability status (high/low/limited/not supported) in suggestions
+- ✅ Create RAG-based retrieval system for contextually relevant suggestions
 
-**Expected Output**: Production-ready embeddings model with Baseline feature mappings
+**Data Structure**:
+```typescript
+interface TrainingExample {
+  instruction: string;        // What to look for
+  input: string;             // Code example
+  output: string;            // Modernization advice
+  feature: string;           // Baseline feature ID
+  featureName: string;       // Human-readable feature name
+  baselineStatus: string;    // Baseline support level
+  category: string;          // javascript, arrays, promises, etc.
+  confidence: number;        // Reliability score
+  legacyPattern?: string;    // Pattern to detect
+  modernMethod?: string;     // Modern replacement
+}
+```
 
-### Step 5: Text-Based Reporting
+**Expected Output**: ✅ Complete training dataset with 1000+ contextualized examples
+
+### Step 5: Text-Based Reporting ✅ COMPLETE
 
 **Goal**: Format and display suggestions to users
 
-**Tasks**:
+**Completed Tasks**:
+- ✅ Create reporter that matches the example format with emojis and structure
+- ✅ Add emoji support for different Baseline statuses:
+  - ✨ High support (widely available)
+  - 🎯 Low support (newly available)  
+  - ⚠️ Limited support
+  - 💡 Not supported yet
+- ✅ Group suggestions by file for organized output
+- ✅ Add summary statistics (total suggestions, high-baseline count)
+- ✅ Support both text and JSON output formats
+- ✅ Include line numbers and old→new code transformations
 
-- Create reporter that matches the example format:
+**Output Format Example**:
+```text
+🚀 Found 3 modernization opportunities in your codebase:
 
-  ```text
-  🚀 Found 12 modernization opportunities in your codebase:
-  
-  📁 src/api/client.js
-    Line 15: XMLHttpRequest → fetch() API
-    ✨ fetch() is Baseline stable and provides cleaner Promise-based syntax
-  ```
+📁 src/api/client.js
+  Line 15: XMLHttpRequest → fetch() API
+  ✨ fetch() is Baseline stable and provides cleaner Promise-based syntax
 
-- Add emoji and color support for terminal output
-- Group suggestions by file
-- Add summary statistics
-- Implement different verbosity levels
+💰 2 suggestions use Baseline stable features
+```
 
-**Expected Output**: Pretty console output matching design specs
+**Expected Output**: ✅ Pretty console output with structured formatting
 
-### Step 6: MVP Testing and Validation
+### Step 6: MVP Testing and Validation ✅ IN PROGRESS
 
 **Goal**: Test the complete pipeline with real codebases
 
-**Tasks**:
+**Completed Tasks**:
+- ✅ Built working CLI with two operational commands:
+  - `baseline-upgrade file <filepath>` - Analyze single file
+  - `baseline-upgrade commit [hash]` - Analyze git commit changes
+- ✅ Integrated Claude AI API with proper error handling
+- ✅ Added verbose and JSON output options
+- ✅ Tested with TypeScript and JavaScript files
+- ✅ Validated Claude RAG system with contextual suggestions
 
-- Create sample test projects with legacy code patterns
-- Run tool against sample codebases
-- Verify accuracy of suggestions
-- Test edge cases and error handling
-- Collect performance metrics
-- Document any issues or improvements needed
+**Current Implementation**:
+- ✅ CLI accepts API key via environment variable or --api-key flag
+- ✅ Proper error handling for missing files, API failures
+- ✅ Git integration for commit-based analysis
+- ✅ File filtering for JS/TS/JSX/TSX extensions
 
-**Expected Output**: Validated MVP ready for demo
+**Remaining Tasks**:
+- [ ] Create comprehensive test suite
+- [ ] Test against larger codebases
+- [ ] Performance optimization and benchmarking
+- [ ] Edge case handling improvements
+
+**Expected Output**: ✅ Working prototype ready for testing and demo
 
 ## CLI Interface Design
 
-### Basic Commands
+### Basic Commands ✅ IMPLEMENTED
 
 ```bash
-# Scan current directory
-baseline-upgrade .
+# Analyze single file
+baseline-upgrade file ./src/api.js
+baseline-upgrade file ./src/api.js --verbose --format json
 
-# Scan specific path
-baseline-upgrade ./src
+# Analyze git commit changes
+baseline-upgrade commit HEAD
+baseline-upgrade commit abc123 --verbose
 
 # Help and version
 baseline-upgrade --help
 baseline-upgrade --version
 ```
 
-### Initial Options
+### Available Options ✅ IMPLEMENTED
 
 ```bash
-# Verbose output
-baseline-upgrade . --verbose
+# Verbose output (shows analysis progress)
+baseline-upgrade file ./src/api.js --verbose
 
-# JSON output for CI/CD
-baseline-upgrade . --format json
+# JSON output for CI/CD integration
+baseline-upgrade file ./src/api.js --format json
 
-# Ignore patterns
+# API key specification (or set ANTHROPIC_API_KEY env var)
+baseline-upgrade file ./src/api.js --api-key your-key-here
+```
+
+### Future Options (Not Yet Implemented)
+
+```bash
+# Directory scanning (planned)
+baseline-upgrade . 
+
+# Ignore patterns (planned)
 baseline-upgrade . --ignore "*.min.js,vendor/**"
+
+# Auto-fix mode (planned)
+baseline-upgrade . --fix
 ```
 
 ## Technical Decisions
 
-### Parser Choice: Babel
+### AI Engine: Claude AI with RAG
 
-- Handles modern JS/TS syntax
-- Robust AST traversal
-- Large ecosystem of plugins
+**Why Claude instead of embeddings**:
+- Superior code understanding and context awareness
+- No need to build/maintain embedding models
+- Better natural language explanations
+- Handles edge cases more gracefully
 
-### CLI Framework: Commander.js
+**RAG Implementation**:
+- Training data from web-features package (1000+ examples)
+- Semantic keyword matching for context retrieval
+- Dynamic scoring system for relevance ranking
+- Contextual prompts with relevant modernization examples
+
+### CLI Framework: Commander.js ✅
 
 - Industry standard for Node.js CLIs
-- Good documentation and examples
+- Good documentation and examples  
 - Handles argument parsing and help generation
+- Successfully implemented with subcommands
 
-### Build Tool: TypeScript + esbuild
+### Build Tool: TypeScript + esbuild ✅
 
-- Fast compilation
-- Single executable output
-- Good developer experience
+- Fast compilation with `npm run build`
+- Single executable output via `bin/baseline-upgrade`
+- Good developer experience with `ts-node` for development
+- ESLint + Prettier integration for code quality
+
+### Data Pipeline: Node.js Scripts ✅
+
+- `data-preparation/explore_web_features.js` - Baseline data exploration
+- `data-preparation/data_driven_generator.js` - Training data generation
+- Direct integration with `web-features` npm package
 
 ## Success Criteria for MVP
 
-- [ ] Can scan JavaScript files in any directory
-- [ ] Detects at least 3 modernization patterns
-- [ ] Integrates Baseline data for feature support
-- [ ] Outputs formatted suggestions with file:line references
-- [ ] Handles common edge cases gracefully
-- [ ] Executable as `npx baseline-upgrade`
+- ✅ Can analyze JavaScript/TypeScript files individually
+- ✅ Detects modernization patterns using Claude AI + RAG
+- ✅ Integrates Baseline data for feature support levels
+- ✅ Outputs formatted suggestions with file:line references  
+- ✅ Handles common edge cases (missing files, API errors)
+- ✅ Executable as `baseline-upgrade` CLI tool
+- ✅ Git integration for commit-based analysis
+- 🚧 Full directory scanning (single files work, directory planned)
+
+## Current Architecture Overview
+
+```text
+src/
+├── cli.ts                 # Main CLI entry point with Commander.js
+├── claude-rag-engine.ts   # Claude AI integration with RAG system  
+├── reporter.ts            # Output formatting (text/JSON)
+├── scanner.ts             # File scanning utilities
+└── web-features-engine.ts # Legacy engine (replaced by Claude)
+
+data-preparation/
+├── explore_web_features.js      # Baseline data exploration
+├── data_driven_generator.js     # Training data generation  
+└── output/
+    └── data_driven_training.json # Generated training examples (1000+)
+
+bin/
+└── baseline-upgrade       # Executable script
+
+Built files in dist/ directory
+```
 
 ## Next Steps After MVP
 
