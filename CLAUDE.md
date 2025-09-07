@@ -18,11 +18,11 @@ npx baseline-upgrade ./src
 📁 src/api/client.js
   Line 15: XMLHttpRequest → fetch() API
   ✨ fetch() is Baseline stable and provides cleaner Promise-based syntax
-  
-📁 src/styles/layout.css  
+
+📁 src/styles/layout.css
   Line 23: float-based layout → CSS Grid
   💡 CSS Grid is Baseline stable and eliminates clearfix hacks
-  
+
 📁 src/utils/helpers.js
   Line 8: var declarations → const/let
   🎯 Block-scoped declarations are Baseline stable and prevent hoisting issues

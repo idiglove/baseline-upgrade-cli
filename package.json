@@ -11,9 +11,21 @@
     "build:fast": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outdir=dist --external:commander",
     "dev": "ts-node src/cli.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["cli", "modernization", "baseline", "web-standards", "javascript", "typescript"],
+  "keywords": [
+    "cli",
+    "modernization",
+    "baseline",
+    "web-standards",
+    "javascript",
+    "typescript"
+  ],
   "author": "",
   "license": "ISC",
   "files": [
@@ -24,8 +36,15 @@
     "commander": "^14.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@types/node": "^24.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
     "esbuild": "^0.25.9",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },

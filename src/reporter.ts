@@ -25,7 +25,9 @@ export class Reporter {
     }
 
     const output: string[] = [];
-    output.push(`🚀 Found ${data.suggestions.length} modernization opportunities in your codebase:\n`);
+    output.push(
+      `🚀 Found ${data.suggestions.length} modernization opportunities in your codebase:\n`
+    );
 
     // Group suggestions by file
     const suggestionsByFile = new Map<string, Suggestion[]>();
@@ -39,11 +41,13 @@ export class Reporter {
     // Output each file with its suggestions
     for (const [file, suggestions] of suggestionsByFile) {
       output.push(`📁 ${file}`);
-      
+
       for (const suggestion of suggestions) {
         const statusEmoji = this.getStatusEmoji(suggestion.baselineStatus);
-        const lineInfo = suggestion.column ? `${suggestion.line}:${suggestion.column}` : suggestion.line;
-        
+        const lineInfo = suggestion.column
+          ? `${suggestion.line}:${suggestion.column}`
+          : suggestion.line;
+
         output.push(`  Line ${lineInfo}: ${suggestion.oldCode} → ${suggestion.newCode}`);
         output.push(`  ${statusEmoji} ${suggestion.message}\n`);
       }
@@ -64,10 +68,14 @@ export class Reporter {
 
   private getStatusEmoji(status: string): string {
     switch (status) {
-      case 'stable': return '✨';
-      case 'newly-available': return '🎯';
-      case 'limited': return '⚠️';
-      default: return '💡';
+      case 'stable':
+        return '✨';
+      case 'newly-available':
+        return '🎯';
+      case 'limited':
+        return '⚠️';
+      default:
+        return '💡';
     }
   }
 }

@@ -44,7 +44,7 @@ class FileScanner {
             'dist/**',
             'build/**',
             '.git/**',
-            'coverage/**'
+            'coverage/**',
         ]).map(pattern => new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')));
         this.extensions = new Set(options.extensions || ['.js', '.ts', '.jsx', '.tsx']);
         this.readContents = options.readContents ?? false;
@@ -98,7 +98,7 @@ class FileScanner {
             result.fileContents.push({
                 path: filePath,
                 content,
-                size: stats.size
+                size: stats.size,
             });
         }
         catch (error) {

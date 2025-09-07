@@ -9,14 +9,20 @@ const program = new Command();
 
 program
   .name('baseline-upgrade')
-  .description('CLI tool that scans codebases and suggests modern web feature upgrades using Baseline data')
+  .description(
+    'CLI tool that scans codebases and suggests modern web feature upgrades using Baseline data'
+  )
   .version(version);
 
 program
   .argument('[path]', 'path to scan', '.')
   .option('-v, --verbose', 'verbose output')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
-  .option('-i, --ignore <patterns>', 'ignore patterns (comma-separated)', 'node_modules/**,*.min.js,dist/**,build/**')
+  .option(
+    '-i, --ignore <patterns>',
+    'ignore patterns (comma-separated)',
+    'node_modules/**,*.min.js,dist/**,build/**'
+  )
   .action(async (path: string, options) => {
     try {
       if (options.verbose) {
@@ -24,12 +30,14 @@ program
       }
 
       // Parse ignore patterns
-      const ignorePatterns = options.ignore ? options.ignore.split(',').map((p: string) => p.trim()) : undefined;
-      
+      const ignorePatterns = options.ignore
+        ? options.ignore.split(',').map((p: string) => p.trim())
+        : undefined;
+
       // Initialize scanner with content reading enabled
-      const scanner = new FileScanner({ 
+      const scanner = new FileScanner({
         ignorePatterns,
-        readContents: true 
+        readContents: true,
       });
       const scanResult = await scanner.scan(path);
 
@@ -50,17 +58,17 @@ program
         totalFiles: scanResult.files.length,
         scannedFiles: scanResult.files,
         totalContentSize,
-        errors: scanResult.errors
+        errors: scanResult.errors,
       };
 
       // Generate report
       const reporter = new Reporter();
-      const output = options.format === 'json' 
-        ? reporter.formatJson(reportData)
-        : reporter.formatText(reportData);
+      const output =
+        options.format === 'json'
+          ? reporter.formatJson(reportData)
+          : reporter.formatText(reportData);
 
       console.log(output);
-
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);

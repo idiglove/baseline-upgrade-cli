@@ -27,15 +27,17 @@ export class FileScanner {
   private maxFileSize: number;
 
   constructor(options: ScanOptions = {}) {
-    this.ignorePatterns = (options.ignorePatterns || [
-      'node_modules/**', 
-      '*.min.js',
-      'dist/**',
-      'build/**',
-      '.git/**',
-      'coverage/**'
-    ]).map(pattern => new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')));
-    
+    this.ignorePatterns = (
+      options.ignorePatterns || [
+        'node_modules/**',
+        '*.min.js',
+        'dist/**',
+        'build/**',
+        '.git/**',
+        'coverage/**',
+      ]
+    ).map(pattern => new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')));
+
     this.extensions = new Set(options.extensions || ['.js', '.ts', '.jsx', '.tsx']);
     this.readContents = options.readContents ?? false;
     this.maxFileSize = options.maxFileSize ?? 1024 * 1024; // 1MB default
@@ -43,7 +45,7 @@ export class FileScanner {
 
   async scan(targetPath: string): Promise<ScanResult> {
     const result: ScanResult = { files: [], fileContents: [], errors: [] };
-    
+
     try {
       await this.scanDirectory(path.resolve(targetPath), result);
     } catch (error) {
@@ -55,7 +57,7 @@ export class FileScanner {
 
   private async scanDirectory(dirPath: string, result: ScanResult): Promise<void> {
     let entries: fs.Dirent[];
-    
+
     try {
       entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
     } catch (error) {
@@ -75,7 +77,7 @@ export class FileScanner {
         await this.scanDirectory(fullPath, result);
       } else if (entry.isFile() && this.isTargetFile(entry.name)) {
         result.files.push(fullPath);
-        
+
         if (this.readContents) {
           await this.readFileContent(fullPath, result);
         }
@@ -87,20 +89,19 @@ export class FileScanner {
     try {
       // Check file size first to avoid reading huge files
       const stats = await fs.promises.stat(filePath);
-      
+
       if (stats.size > this.maxFileSize) {
         result.errors.push(`File too large (${stats.size} bytes): ${filePath}`);
         return;
       }
 
       const content = await fs.promises.readFile(filePath, 'utf8');
-      
+
       result.fileContents.push({
         path: filePath,
         content,
-        size: stats.size
+        size: stats.size,
       });
-      
     } catch (error) {
       result.errors.push(`Cannot read file ${filePath}: ${error}`);
     }

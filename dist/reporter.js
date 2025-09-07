@@ -21,7 +21,9 @@ class Reporter {
             output.push(`📁 ${file}`);
             for (const suggestion of suggestions) {
                 const statusEmoji = this.getStatusEmoji(suggestion.baselineStatus);
-                const lineInfo = suggestion.column ? `${suggestion.line}:${suggestion.column}` : suggestion.line;
+                const lineInfo = suggestion.column
+                    ? `${suggestion.line}:${suggestion.column}`
+                    : suggestion.line;
                 output.push(`  Line ${lineInfo}: ${suggestion.oldCode} → ${suggestion.newCode}`);
                 output.push(`  ${statusEmoji} ${suggestion.message}\n`);
             }
@@ -38,10 +40,14 @@ class Reporter {
     }
     getStatusEmoji(status) {
         switch (status) {
-            case 'stable': return '✨';
-            case 'newly-available': return '🎯';
-            case 'limited': return '⚠️';
-            default: return '💡';
+            case 'stable':
+                return '✨';
+            case 'newly-available':
+                return '🎯';
+            case 'limited':
+                return '⚠️';
+            default:
+                return '💡';
         }
     }
 }

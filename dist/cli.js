@@ -21,11 +21,13 @@ program
             console.log(`🚀 Scanning ${path} for modernization opportunities...`);
         }
         // Parse ignore patterns
-        const ignorePatterns = options.ignore ? options.ignore.split(',').map((p) => p.trim()) : undefined;
+        const ignorePatterns = options.ignore
+            ? options.ignore.split(',').map((p) => p.trim())
+            : undefined;
         // Initialize scanner with content reading enabled
         const scanner = new scanner_1.FileScanner({
             ignorePatterns,
-            readContents: true
+            readContents: true,
         });
         const scanResult = await scanner.scan(path);
         if (options.verbose) {
@@ -44,7 +46,7 @@ program
             totalFiles: scanResult.files.length,
             scannedFiles: scanResult.files,
             totalContentSize,
-            errors: scanResult.errors
+            errors: scanResult.errors,
         };
         // Generate report
         const reporter = new reporter_1.Reporter();
