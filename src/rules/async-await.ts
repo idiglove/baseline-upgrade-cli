@@ -19,7 +19,6 @@ export const asyncAwaitRule: RuleDefinition = {
       // Look for .then() calls
       if (methodName === 'then') {
         // Check if this is chained (has another .then() or .catch())
-        let current = node.callee.object;
         let hasChain = false;
         
         // Simple heuristic: if the parent expression is also a call expression

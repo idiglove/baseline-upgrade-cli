@@ -23,9 +23,6 @@ export const varToConstLetRule: RuleDefinition = {
       // Simple heuristic: if no init or looks like it might be reassigned, suggest let
       // Otherwise suggest const
       const suggestedKeyword = !hasInit || varName.match(/^(i|j|k|index|count)$/) ? 'let' : 'const';
-      
-      const oldCode = context.sourceCode.slice(node.start!, node.end!);
-      const newCode = oldCode.replace(/^var\b/, suggestedKeyword);
 
       context.report({
         file: context.filename,

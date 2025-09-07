@@ -89,7 +89,7 @@ export const objectAssignMethodRule: RuleDefinition = {
   }
 };
 
-function hasCopyingPattern(blockStatement: any, keyVariable: any, sourceObject: any): boolean {
+function hasCopyingPattern(blockStatement: any, keyVariable: any, _sourceObject: any): boolean {
   if (!blockStatement.body || !t.isIdentifier(keyVariable)) return false;
   
   for (const stmt of blockStatement.body) {
