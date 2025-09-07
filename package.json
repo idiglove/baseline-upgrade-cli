@@ -1,0 +1,35 @@
+{
+  "name": "baseline-upgrade",
+  "version": "1.0.0",
+  "description": "CLI tool that scans codebases and suggests modern web feature upgrades using Baseline data",
+  "main": "dist/cli.js",
+  "bin": {
+    "baseline-upgrade": "./bin/baseline-upgrade"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:fast": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outdir=dist --external:commander",
+    "dev": "ts-node src/cli.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["cli", "modernization", "baseline", "web-standards", "javascript", "typescript"],
+  "author": "",
+  "license": "ISC",
+  "files": [
+    "dist/",
+    "bin/"
+  ],
+  "dependencies": {
+    "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "esbuild": "^0.25.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
