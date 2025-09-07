@@ -36,7 +36,7 @@ npx baseline-upgrade ./src
 
 - **Context-aware recommendations** - Different suggestions for React vs vanilla JS vs Vue
 - **Bundle impact analysis** - "Upgrading this could remove X polyfills, saving Y KB"
-- **Confidence levels** - Baseline stable vs newly available features
+- **Baseline confidence levels** - Stable vs newly available features based on web-features data
 - **Priority scoring** - Focus on highest-impact modernizations first
 
 ### Developer Experience
@@ -60,8 +60,8 @@ npx baseline-upgrade ./src
 
 1. **File Scanner** - Recursively process project files
 2. **Parser Engine** - AST parsing for JS/TS, CSS parsing for stylesheets
-3. **Rule Engine** - Configurable modernization rules
-4. **Baseline Integration** - Real-time feature support data
+3. **Deterministic Rule Engine** - Pattern-based modernization rules with Baseline data integration
+4. **Baseline Integration** - Web features data for feature support validation
 5. **Report Generator** - Multiple output formats
 6. **Auto-fix Engine** - Safe automated code transformations
 
@@ -71,9 +71,10 @@ npx baseline-upgrade ./src
 - **JS Parsing**: Babel parser, TypeScript compiler API
 - **CSS Parsing**: PostCSS, CSS Tree
 - **Baseline Data**: web-features npm package
-- **CLI Framework**: Commander.js or Yargs
+- **Rule Engine**: Pattern matching with AST traversal
+- **CLI Framework**: Commander.js
 - **Testing**: Jest
-- **Build**: esbuild or Rollup
+- **Build**: esbuild
 
 ## Command Line Interface
 

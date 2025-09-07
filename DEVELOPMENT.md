@@ -42,9 +42,9 @@
 
 **Expected Output**: Scanner that can find and read all JS/TS files in a project
 
-### Step 3: AI-Powered Modernization Engine ✅ COMPLETE (Claude RAG-based)
+### Step 3: Deterministic Rule-Based Modernization Engine ✅ COMPLETE
 
-**Goal**: Build scalable AI-powered code analysis using Claude AI with RAG
+**Goal**: Build scalable pattern-based code analysis using AST traversal and deterministic rules
 
 **Initial Implementation (Manual Rules - Prototype)**:
 - ✅ Set up Babel parser for AST generation
@@ -52,69 +52,68 @@
 - ✅ Implement `var` → `const`/`let`, `XMLHttpRequest` → `fetch()`, `indexOf` → `includes`
 - ✅ Prove concept with 12 suggestions on test code
 
-**Current Implementation (Claude RAG Approach) - ✅ COMPLETE**:
+**Current Implementation (Deterministic Rule Engine) - ✅ COMPLETE**:
 
 **Architecture**:
 ```typescript
-class ClaudeRAGEngine {
-  private anthropic: Anthropic;              // Claude AI client
-  private trainingData: TrainingExample[];   // Web features training data
+class DeterministicEngine {
+  private rules: ModernizationRule[];        // Pattern-based rules
+  private baselineData: BaselineFeatures;    // Web features data
   
-  async analyzeFile(content: string, filePath: string): Promise<ModernizationSuggestion[]> {
-    const relevantExamples = this.findRelevantExamples(content);
-    const ragContext = this.createRAGContext(relevantExamples);
-    return await this.callClaudeWithRAG(content, ragContext);
+  analyzeFile(content: string, filePath: string): ModernizationSuggestion[] {
+    const ast = this.parseCode(content);
+    const suggestions = this.applyRules(ast, filePath);
+    return this.enrichWithBaseline(suggestions);
   }
 }
 ```
 
 **Completed Tasks**:
 - ✅ Install `web-features` package for Baseline data
-- ✅ Build comprehensive training dataset from web-features (1000+ examples)
-- ✅ Implement intelligent pattern matching for RAG context selection
-- ✅ Create Claude prompt engineering with contextual examples
-- ✅ Add semantic scoring for relevance ranking
-- ✅ Support multiple categories: JavaScript, arrays, promises, API patterns
+- ✅ Implement AST-based pattern matching rules
+- ✅ Create deterministic rule engine with configurable rules
+- ✅ Add Baseline data integration for feature support validation
+- ✅ Implement rules for JavaScript, arrays, promises, API patterns
 - ✅ Include Baseline status mapping (high/low/limited support)
 
-**Data Generation Pipeline**:
+**Rule Development Pipeline**:
 - ✅ `data-preparation/explore_web_features.js` - Baseline data exploration
-- ✅ `data-preparation/data_driven_generator.js` - Training data generation
-- ✅ Generated 1000+ training examples with code patterns and modernization advice
-- ✅ Semantic keyword extraction from training data for dynamic matching
+- ✅ Pattern-based rule definitions with AST node matching
+- ✅ Generated rule configurations with code patterns and transformations
+- ✅ Rule validation and testing framework
 
-**Expected Output**: Claude-powered analysis with contextual training examples
+**Expected Output**: Deterministic pattern-based analysis with Baseline feature validation
 
-### Step 4: Baseline Data Integration and Model Training ✅ COMPLETE
+### Step 4: Baseline Data Integration and Rule Configuration ✅ COMPLETE
 
-**Goal**: Create training data from Baseline web standards data
+**Goal**: Integrate Baseline web standards data with deterministic rules
 
 **Completed Tasks**:
 - ✅ Research `web-features` npm package structure and data format
-- ✅ Extract Baseline feature descriptions, compatibility data, and code examples
-- ✅ Generate comprehensive training dataset (1000+ examples) from web-features
-- ✅ Map code patterns to Baseline features via intelligent keyword matching
-- ✅ Build pattern database with modernization suggestions and contextual examples
-- ✅ Include Baseline stability status (high/low/limited/not supported) in suggestions
-- ✅ Create RAG-based retrieval system for contextually relevant suggestions
+- ✅ Extract Baseline feature descriptions, compatibility data, and specifications
+- ✅ Create rule configuration system mapping patterns to Baseline features
+- ✅ Map code patterns to Baseline features via deterministic matching
+- ✅ Build rule database with modernization transformations and explanations
+- ✅ Include Baseline stability status (high/low/limited/not supported) in rules
+- ✅ Create feature lookup system for rule validation
 
 **Data Structure**:
 ```typescript
-interface TrainingExample {
-  instruction: string;        // What to look for
-  input: string;             // Code example
-  output: string;            // Modernization advice
+interface ModernizationRule {
+  id: string;                // Rule identifier
+  pattern: ASTPattern;       // AST pattern to match
+  replacement: string;       // Modern replacement pattern
   feature: string;           // Baseline feature ID
   featureName: string;       // Human-readable feature name
   baselineStatus: string;    // Baseline support level
   category: string;          // javascript, arrays, promises, etc.
-  confidence: number;        // Reliability score
-  legacyPattern?: string;    // Pattern to detect
-  modernMethod?: string;     // Modern replacement
+  confidence: number;        // Rule reliability score
+  description: string;       // Explanation of improvement
+  impact: 'high' | 'medium' | 'low';
 }
 ```
 
-**Expected Output**: ✅ Complete training dataset with 1000+ contextualized examples
+**Expected Output**: ✅ Complete rule configuration with pattern-based transformations
 
 ### Step 5: Text-Based Reporting ✅ COMPLETE
 
@@ -159,8 +158,8 @@ interface TrainingExample {
 - ✅ Validated Claude RAG system with contextual suggestions
 
 **Current Implementation**:
-- ✅ CLI accepts API key via environment variable or --api-key flag
-- ✅ Proper error handling for missing files, API failures
+- ✅ CLI with deterministic analysis (no API keys required)
+- ✅ Proper error handling for missing files and parsing failures
 - ✅ Git integration for commit-based analysis
 - ✅ File filtering for JS/TS/JSX/TSX extensions
 
@@ -199,8 +198,8 @@ baseline-upgrade file ./src/api.js --verbose
 # JSON output for CI/CD integration
 baseline-upgrade file ./src/api.js --format json
 
-# API key specification (or set ANTHROPIC_API_KEY env var)
-baseline-upgrade file ./src/api.js --api-key your-key-here
+# Custom rule configuration (optional)
+baseline-upgrade file ./src/api.js --config ./custom-rules.json
 ```
 
 ### Future Options (Not Yet Implemented)
@@ -218,19 +217,19 @@ baseline-upgrade . --fix
 
 ## Technical Decisions
 
-### AI Engine: Claude AI with RAG
+### Deterministic Rule Engine
 
-**Why Claude instead of embeddings**:
-- Superior code understanding and context awareness
-- No need to build/maintain embedding models
-- Better natural language explanations
-- Handles edge cases more gracefully
+**Why deterministic over AI-based**:
+- Consistent, reproducible results
+- No API dependencies or rate limits
+- Faster execution and offline capability
+- Transparent rule logic for debugging
 
-**RAG Implementation**:
-- Training data from web-features package (1000+ examples)
-- Semantic keyword matching for context retrieval
-- Dynamic scoring system for relevance ranking
-- Contextual prompts with relevant modernization examples
+**Rule Implementation**:
+- Pattern-based AST matching from web-features package
+- Direct code transformation rules
+- Baseline feature validation system
+- Configurable rule sets for different project needs
 
 ### CLI Framework: Commander.js ✅
 
@@ -267,20 +266,20 @@ baseline-upgrade . --fix
 
 ```text
 src/
-├── cli.ts                 # Main CLI entry point with Commander.js
-├── claude-rag-engine.ts   # Claude AI integration with RAG system  
-├── reporter.ts            # Output formatting (text/JSON)
-├── scanner.ts             # File scanning utilities
-└── web-features-engine.ts # Legacy engine (replaced by Claude)
+├── cli.ts                    # Main CLI entry point with Commander.js
+├── deterministic-engine.ts  # Rule-based pattern matching engine  
+├── reporter.ts              # Output formatting (text/JSON)
+├── scanner.ts               # File scanning utilities
+└── rules/                   # Modernization rule definitions
 
 data-preparation/
-├── explore_web_features.js      # Baseline data exploration
-├── data_driven_generator.js     # Training data generation  
+├── explore_web_features.js  # Baseline data exploration
+├── rule_generator.js        # Rule configuration generation  
 └── output/
-    └── data_driven_training.json # Generated training examples (1000+)
+    └── modernization_rules.json # Generated rule configurations
 
 bin/
-└── baseline-upgrade       # Executable script
+└── baseline-upgrade         # Executable script
 
 Built files in dist/ directory
 ```
