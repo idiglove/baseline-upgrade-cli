@@ -167,31 +167,73 @@ When scanning the project directory, finds:
 
 ## Next Steps (From development.md)
 
-### 🔄 Step 3: Rule Engine and AST Parsing (NEXT)
+### ✅ Step 3: Rule Engine and AST Parsing (COMPLETE - Prototype)
 
 **Goal**: Parse JavaScript files and detect patterns to modernize
 
-**Tasks Remaining:**
+**Tasks Completed:**
 
-- [ ] Set up Babel parser for AST generation
-- [ ] Create rule engine architecture
-- [ ] Implement initial modernization rules:
+- [x] Set up Babel parser for AST generation
+- [x] Create rule engine architecture 
+- [x] Implement initial modernization rules:
   1. `var` declarations → `const`/`let`
   2. `XMLHttpRequest` → `fetch()` API  
   3. `Array.indexOf() !== -1` → `Array.includes()`
-- [ ] Create suggestion data structure with file, line, old/new code
+- [x] Create suggestion data structure with file, line, old/new code
+- [x] Integrate with CLI and test with sample legacy code
 
-### 🔄 Step 4: Baseline Data Integration
+**Results Achieved:**
+- ✅ Successfully detected **12 modernization opportunities** in test code
+- ✅ Accurate AST-based pattern matching with line/column precision
+- ✅ JSON output for programmatic integration
+- ✅ All 3 rule types working: var→const/let (8), XHR→fetch (1), indexOf→includes (3)
 
-**Goal**: Connect rules to Baseline web standards data
+**Architecture Decision: Pivot to AI/Embeddings Approach**
+
+The manual rule approach proved the concept but revealed scalability limitations:
+- Each pattern requires hand-coded AST traversal logic
+- Complex edge cases need extensive manual handling
+- Adding new modernization patterns is labor-intensive
+- Doesn't leverage the full scope of Baseline web features data
+
+**Next Phase: AI-Powered Embeddings Engine**
+
+### 🔄 Step 4: AI-Powered Embeddings Engine (NEXT)
+
+**Goal**: Build scalable embeddings-based modernization engine
+
+**Architecture Overview:**
+```typescript
+class EmbeddingBasedEngine {
+  private embeddings: Float32Array[];     // Pre-computed Baseline features (~5MB)
+  private patterns: PatternDatabase;      // Known modernization patterns
+  
+  async analyzeCode(code: string): Promise<Suggestion[]> {
+    const codeEmbedding = this.extractEmbedding(code);
+    const similarFeatures = this.findSimilar(codeEmbedding);
+    return this.mapToSuggestions(similarFeatures, code);
+  }
+}
+```
 
 **Tasks Remaining:**
 
-- [ ] Install `web-features` npm package
-- [ ] Research Baseline API and data structure
-- [ ] Map rules to Baseline feature identifiers
-- [ ] Add feature support checking logic
-- [ ] Include Baseline stability status in suggestions
+- [ ] Install `web-features` npm package and research Baseline data structure
+- [ ] Extract Baseline feature descriptions and code examples
+- [ ] Generate embeddings for Baseline features using sentence transformers
+- [ ] Create pattern database with pre-computed embeddings (~5-10MB)
+- [ ] Implement cosine similarity search for pattern matching
+- [ ] Add confidence scoring and LLM API fallback for low-confidence cases
+- [ ] Package embeddings model for npm distribution
+- [ ] Performance optimization: <100ms inference time
+
+**Benefits of Embeddings Approach:**
+- ✅ **Scalable**: No manual rule creation for each pattern
+- ✅ **Fast**: 5-10MB model, <100ms inference, works offline
+- ✅ **Comprehensive**: Leverages full Baseline features dataset
+- ✅ **Intelligent**: Semantic similarity matching vs exact pattern matching
+- ✅ **Extensible**: Easy to add new patterns by updating embeddings
+- ✅ **Contextual**: Can understand code intent beyond surface syntax
 
 ### 🔄 Step 5: Text-Based Reporting
 
@@ -269,13 +311,30 @@ When scanning the project directory, finds:
 ## Success Metrics for MVP
 
 - [x] Can scan JavaScript files in any directory
-- [ ] Detects at least 3 modernization patterns  
-- [ ] Integrates Baseline data for feature support
-- [ ] Outputs formatted suggestions with file:line references
-- [ ] Handles common edge cases gracefully
-- [ ] Executable as `npx baseline-upgrade`
+- [x] Detects at least 3 modernization patterns  
+- [x] Outputs formatted suggestions with file:line references
+- [x] Handles common edge cases gracefully
+- [ ] Integrates Baseline data for feature support (IN PROGRESS - Embeddings approach)
+- [ ] Executable as `npx baseline-upgrade` (Need to package embeddings model)
 
-**Progress: 2/6 criteria complete**
+**Progress: 4/6 criteria complete**
+
+## Step 3 Results Summary
+
+**Proof of Concept Success:**
+- ✅ **12 suggestions detected** in test legacy code
+- ✅ **3 rule types working**: var→const/let, XHR→fetch, indexOf→includes  
+- ✅ **Accurate positioning**: Line and column precision for suggestions
+- ✅ **Multiple output formats**: Human-readable text and structured JSON
+- ✅ **Performance**: Analyzed 818 bytes of code instantly
+- ✅ **Error handling**: Graceful failures for unparseable code
+
+**Key Technical Achievements:**
+- AST parsing with Babel for JavaScript/TypeScript
+- Rule engine architecture with pluggable rules
+- Source location mapping for accurate code replacement suggestions
+- CLI integration with file scanner and reporter
+- JSON output format suitable for IDE integrations and CI/CD
 
 ## Issues/Decisions Log
 
@@ -295,13 +354,52 @@ When scanning the project directory, finds:
 
 **Implementation**: `readContents: boolean` option with 1MB default limit
 
+### Architecture Decision: Pivot from Manual Rules to AI/Embeddings
+
+**Problem**: Manual rule approach doesn't scale - each pattern needs hand-coded AST logic
+
+**Analysis**: After implementing 3 rules successfully, identified scalability issues:
+- Labor-intensive rule creation for each modernization pattern
+- Complex edge case handling for AST traversal
+- Limited by developer's knowledge of all possible patterns
+- Doesn't leverage full scope of Baseline web features (hundreds of features)
+
+**Solution**: Pivot to embeddings-based AI approach with 5-10MB pre-trained model
+
+**Benefits**:
+- **Scalable**: Semantic similarity vs manual pattern matching
+- **Fast**: <100ms inference time, works offline
+- **Comprehensive**: Leverages entire Baseline features dataset
+- **Maintainable**: Add new patterns by updating embeddings, not code
+
+**Implementation**: Keep AST parsing for code structure, replace rule engine with embeddings similarity search
+
 ## Ready for Next Session
 
-The foundation is solid and ready for Step 3 (Rule Engine and AST Parsing). The file scanner is robust and the CLI interface is working well. Next session should focus on:
+**Step 3 Complete**: Rule engine prototype successfully implemented with 12 detected modernization opportunities in test code. Architecture decision made to pivot to AI/embeddings approach for scalability.
 
-1. Installing Babel parser dependencies
-2. Creating the rule engine architecture  
-3. Implementing the first few modernization rules
-4. Testing rule detection on sample code
+### Next Session Focus: Step 4 - AI/Embeddings Engine
 
-**Current Status**: MVP foundation complete, ready to add core functionality!
+1. **Research Baseline data structure**:
+   - Install and explore `web-features` npm package  
+   - Understand Baseline feature format, descriptions, and examples
+   - Map features to potential code modernization opportunities
+
+2. **Build embeddings infrastructure**:
+   - Choose embedding model (sentence-transformers compatible)
+   - Generate embeddings for Baseline features and descriptions
+   - Create efficient similarity search (cosine similarity)
+   - Design pattern database structure
+
+3. **Implement embeddings engine**:
+   - Replace manual rules with embedding-based pattern matching
+   - Add confidence scoring and thresholds
+   - Implement LLM API fallback for low-confidence cases
+   - Optimize for <100ms inference time
+
+4. **Package and test**:
+   - Bundle embeddings model (~5-10MB) with npm package
+   - Test on various codebases for accuracy and performance
+   - Compare results with manual rule approach
+
+**Current Status**: Strong foundation with working AST parsing, file scanning, and reporting. Ready to scale with AI-powered modernization suggestions!

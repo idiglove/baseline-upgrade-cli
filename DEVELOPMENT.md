@@ -42,45 +42,58 @@
 
 **Expected Output**: Scanner that can find and read all JS/TS files in a project
 
-### Step 3: Rule Engine and AST Parsing
+### Step 3: AI-Powered Modernization Engine ✅ COMPLETE (Prototype)
 
-**Goal**: Parse JavaScript files and detect patterns to modernize
+**Goal**: Build scalable AI-powered code analysis using embeddings
+
+**Initial Implementation (Manual Rules - Prototype)**:
+- ✅ Set up Babel parser for AST generation
+- ✅ Create rule engine architecture with 3 manual rules
+- ✅ Implement `var` → `const`/`let`, `XMLHttpRequest` → `fetch()`, `indexOf` → `includes`
+- ✅ Prove concept with 12 suggestions on test code
+
+**Next Phase (AI/Embeddings Approach)**:
 
 **Tasks**:
 
-- Set up Babel parser for AST generation
-- Create rule engine architecture:
+- Research and implement embeddings-based modernization engine:
 
   ```typescript
-  interface Rule {
-    name: string;
-    detect: (node: Node, context: Context) => Match[];
-    suggest: (match: Match) => Suggestion;
+  class EmbeddingBasedEngine {
+    private embeddings: Float32Array[];     // Pre-computed Baseline features (~5MB)  
+    private patterns: PatternDatabase;      // Known modernization patterns
+    
+    async analyzeCode(code: string): Promise<Suggestion[]> {
+      const codeEmbedding = this.extractEmbedding(code);
+      const similarFeatures = this.findSimilar(codeEmbedding);
+      return this.mapToSuggestions(similarFeatures, code);
+    }
   }
   ```
 
-- Implement initial rules:
-  1. `var` declarations → `const`/`let`
-  2. `XMLHttpRequest` → `fetch()` API
-  3. `Array.indexOf() !== -1` → `Array.includes()`
-- Create suggestion data structure with file, line, old/new code
+- Install `web-features` package for Baseline data
+- Build embedding model from Baseline features + code patterns
+- Create pattern database with pre-computed embeddings
+- Implement cosine similarity search for pattern matching
+- Add LLM API fallback for low-confidence cases
 
-**Expected Output**: Parse JS files and detect modernization opportunities
+**Expected Output**: 5-10MB embeddings model with <100ms inference time
 
-### Step 4: Baseline Data Integration
+### Step 4: Baseline Data Integration and Model Training
 
-**Goal**: Connect rules to Baseline web standards data
+**Goal**: Create embeddings from Baseline web standards data
 
 **Tasks**:
 
-- Install `web-features` npm package
-- Research Baseline API and data structure
-- Map our rules to Baseline feature identifiers
-- Add feature support checking logic
-- Include Baseline stability status in suggestions
-- Add "newly available" vs "baseline stable" indicators
+- Research `web-features` npm package structure and data format
+- Extract Baseline feature descriptions, compatibility data, and code examples
+- Generate embeddings for each Baseline feature using sentence transformers
+- Map code patterns to Baseline features via semantic similarity
+- Build pattern database with modernization suggestions
+- Include Baseline stability status (stable/newly-available/limited) in suggestions
+- Package embeddings model for distribution (~5-10MB)
 
-**Expected Output**: Suggestions include Baseline feature support status
+**Expected Output**: Production-ready embeddings model with Baseline feature mappings
 
 ### Step 5: Text-Based Reporting
 
