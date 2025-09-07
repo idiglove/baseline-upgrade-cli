@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { FileScanner } from './scanner';
 import { Reporter, ReportData } from './reporter';
+import { RuleEngine, defaultRules } from './rules';
 import { version } from '../package.json';
 
 const program = new Command();
@@ -50,11 +51,29 @@ program
         }
       }
 
-      // TODO: Implement rule engine and analysis
-      // For now, create mock report data
+      // Initialize rule engine with default rules
+      const ruleEngine = new RuleEngine();
+      ruleEngine.addRules(defaultRules);
+
+      if (options.verbose) {
+        console.log(`Loaded ${ruleEngine.getRules().length} modernization rules`);
+      }
+
+      // Analyze each file with the rule engine
+      const allSuggestions = [];
+      for (const fileInfo of scanResult.fileContents) {
+        try {
+          const suggestions = await ruleEngine.analyzeFile(fileInfo.path, fileInfo.content);
+          allSuggestions.push(...suggestions);
+        } catch (error) {
+          scanResult.errors.push(`Failed to analyze ${fileInfo.path}: ${error}`);
+        }
+      }
+
+      // Create report data with actual suggestions
       const totalContentSize = scanResult.fileContents.reduce((sum, file) => sum + file.size, 0);
       const reportData: ReportData = {
-        suggestions: [], // Will be populated by rule engine
+        suggestions: allSuggestions,
         totalFiles: scanResult.files.length,
         scannedFiles: scanResult.files,
         totalContentSize,
