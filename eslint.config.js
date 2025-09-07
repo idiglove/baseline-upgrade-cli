@@ -27,6 +27,12 @@ module.exports = [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'bin/**', 'tests/**', '*.min.js'],
+    files: ['src/rules/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off', // AST nodes require any types
+    },
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'bin/**', 'tests/**', 'coverage/**', '*.min.js'],
   },
 ];

@@ -3,7 +3,7 @@
 import 'dotenv/config';
 import { Command } from 'commander';
 import { Reporter, ReportData } from './reporter';
-import { ClaudeRAGEngine } from './claude-rag-engine';
+import { RuleEngine, builtinRules, defaultConfig } from './rules';
 import { version } from '../package.json';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name('baseline-upgrade')
   .description(
-    'CLI tool that suggests modern web feature upgrades using Claude AI and Baseline data'
+    'CLI tool that suggests modern web feature upgrades using deterministic rule-based analysis'
   )
   .version(version);
 
@@ -24,17 +24,10 @@ program
   .argument('<filepath>', 'path to the file to analyze')
   .option('-v, --verbose', 'verbose output')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
-  .option('--api-key <key>', 'Anthropic API key (or set ANTHROPIC_API_KEY env var)')
   .action(async (filepath: string, options) => {
     try {
       if (!fs.existsSync(filepath)) {
         console.error(`❌ File not found: ${filepath}`);
-        process.exit(1);
-      }
-
-      const apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
-        console.error('❌ Anthropic API key required. Set ANTHROPIC_API_KEY env var or use --api-key option');
         process.exit(1);
       }
 
@@ -43,9 +36,14 @@ program
       }
 
       const content = await fs.promises.readFile(filepath, 'utf8');
-      const engine = new ClaudeRAGEngine(apiKey);
       
-      const suggestions = await engine.analyzeFile(content, filepath);
+      // Initialize rule engine with built-in rules
+      const engine = new RuleEngine(defaultConfig.rules);
+      for (const [ruleId, rule] of Object.entries(builtinRules)) {
+        engine.registerRule(ruleId, rule);
+      }
+      
+      const suggestions = engine.analyzeFile(filepath, content);
 
       const reportData: ReportData = {
         suggestions,
@@ -74,15 +72,8 @@ program
   .argument('[commit]', 'git commit hash (defaults to latest commit)', 'HEAD')
   .option('-v, --verbose', 'verbose output')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
-  .option('--api-key <key>', 'Anthropic API key (or set ANTHROPIC_API_KEY env var)')
   .action(async (commit: string, options) => {
     try {
-      const apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
-        console.error('❌ Anthropic API key required. Set ANTHROPIC_API_KEY env var or use --api-key option');
-        process.exit(1);
-      }
-
       if (options.verbose) {
         console.log(`🚀 Analyzing git commit ${commit} for modernization opportunities...`);
       }
@@ -96,18 +87,25 @@ program
         process.exit(1);
       }
 
-      const changedFiles = diffOutput.trim().split('\n').filter(f => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.jsx') || f.endsWith('.tsx'));
+      const changedFiles = diffOutput.trim().split('\n').filter(f => 
+        f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.jsx') || f.endsWith('.tsx') || f.endsWith('.css')
+      );
       
       if (changedFiles.length === 0) {
-        console.log('No JavaScript/TypeScript files changed in this commit.');
+        console.log('No supported files changed in this commit.');
         return;
       }
 
       if (options.verbose) {
-        console.log(`Found ${changedFiles.length} changed JS/TS files`);
+        console.log(`Found ${changedFiles.length} changed files`);
       }
 
-      const engine = new ClaudeRAGEngine(apiKey);
+      // Initialize rule engine
+      const engine = new RuleEngine(defaultConfig.rules);
+      for (const [ruleId, rule] of Object.entries(builtinRules)) {
+        engine.registerRule(ruleId, rule);
+      }
+
       const allSuggestions = [];
       const errors = [];
 
@@ -116,7 +114,7 @@ program
         
         try {
           const content = await fs.promises.readFile(file, 'utf8');
-          const suggestions = await engine.analyzeFile(content, file);
+          const suggestions = engine.analyzeFile(file, content);
           allSuggestions.push(...suggestions);
           
           if (options.verbose) {

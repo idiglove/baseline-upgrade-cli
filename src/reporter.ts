@@ -1,4 +1,4 @@
-import { ModernizationSuggestion } from './web-features-engine';
+import { ModernizationSuggestion } from './rules/types';
 
 export interface Suggestion {
   file: string;
@@ -48,7 +48,7 @@ export class Reporter {
         const statusEmoji = this.getStatusEmoji(suggestion.baselineStatus);
         const lineInfo = suggestion.column
           ? `${suggestion.line}:${suggestion.column}`
-          : suggestion.line;
+          : suggestion.line.toString();
 
         output.push(`  Line ${lineInfo}: ${suggestion.oldCode} → ${suggestion.newCode}`);
         output.push(`  ${statusEmoji} ${suggestion.description}\n`);
