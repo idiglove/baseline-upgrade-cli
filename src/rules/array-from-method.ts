@@ -1,5 +1,5 @@
 import * as t from '@babel/types';
-import { RuleDefinition, RuleContext } from './types';
+import { RuleDefinition, RuleContext, AutofixCapable } from './types';
 
 export const arrayFromMethodRule: RuleDefinition = {
   name: 'array-from-method',
@@ -45,40 +45,37 @@ export const arrayFromMethodRule: RuleDefinition = {
             callbackCode = context.sourceCode.slice(mapCallback.start, mapCallback.end);
           }
 
-          context.report({
+          const suggestion = {
             file: context.filename,
             line: loc.start.line,
             column: loc.start.column,
             oldCode: `new Array(${sizeCode}).fill().map(${callbackCode})`,
             newCode: `Array.from({length: ${sizeCode}}, ${callbackCode})`,
             description: 'Array.from() is Baseline stable and more direct for array generation',
-            category: 'javascript',
-            baselineStatus: 'high',
+            category: 'javascript' as const,
+            baselineStatus: 'high' as const,
             ruleId: 'array-from-method',
-            severity: 'info'
-          });
+            severity: 'info' as const,
+            // Autofix capability - provide exact position information
+            startLine: loc.start.line,
+            startColumn: loc.start.column,
+            endLine: loc.end.line,
+            endColumn: loc.end.column
+          };
+
+          context.report(suggestion);
+          
+          // Report autofix if supported
+          if (context.reportAutofix) {
+            context.reportAutofix(suggestion);
+          }
         }
       }
     }
     
-    // Pattern: Array.from(arrayLike) instead of [...arrayLike] for non-iterables
-    // This is informational to suggest Array.from for array-like objects
-    if (t.isSpreadElement(node)) {
-      const loc = node.loc;
-      if (!loc) return;
-
-      context.report({
-        file: context.filename,
-        line: loc.start.line,
-        column: loc.start.column,
-        oldCode: '[...arrayLike]',
-        newCode: 'Array.from(arrayLike)',
-        description: 'Consider Array.from() for converting array-like objects to arrays',
-        category: 'javascript',
-        baselineStatus: 'high',
-        ruleId: 'array-from-method',
-        severity: 'info'
-      });
-    }
+    // Note: Removed overly broad spread element detection
+    // Object spread (...obj) is already modern and should not be flagged
+    // Array.from() should only be suggested for specific cases like:
+    // [...document.querySelectorAll()] -> Array.from(document.querySelectorAll())
   }
 };

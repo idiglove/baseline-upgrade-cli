@@ -2,6 +2,15 @@ export interface RuleContext {
   filename: string;
   sourceCode: string;
   report: (suggestion: ModernizationSuggestion) => void;
+  reportAutofix?: (suggestion: ModernizationSuggestion & AutofixCapable) => void;
+}
+
+export interface AutofixCapable {
+  // Position information for precise text replacement
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
 }
 
 export interface ModernizationSuggestion {

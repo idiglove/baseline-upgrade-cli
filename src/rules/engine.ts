@@ -1,7 +1,8 @@
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
-import postcss from 'postcss';
-import { RuleDefinition, RuleContext, ModernizationSuggestion, RuleConfig } from './types';
+import { RuleDefinition, RuleContext, ModernizationSuggestion, RuleConfig, AutofixCapable } from './types';
+import { AutofixEngine } from '../autofix/engine';
+import { AutofixSuggestion, AutofixOptions, AutofixResult } from '../autofix/types';
 
 export class RuleEngine {
   private rules: Map<string, RuleDefinition> = new Map();
@@ -28,14 +29,71 @@ export class RuleEngine {
     
     if (['.js', '.ts', '.jsx', '.tsx'].includes(ext)) {
       this.analyzeJavaScript(content, context);
-    } else if (ext === '.css') {
-      this.analyzeCSS(content, context);
     }
     
     // Run pattern-based rules for all files
     this.analyzePatterns(context);
     
     return suggestions.filter(suggestion => this.isRuleEnabled(suggestion.ruleId));
+  }
+
+  analyzeFileWithAutofix(filename: string, content: string): { 
+    suggestions: ModernizationSuggestion[], 
+    autofixSuggestions: AutofixSuggestion[] 
+  } {
+    const suggestions: ModernizationSuggestion[] = [];
+    const autofixSuggestions: AutofixSuggestion[] = [];
+    
+    const context: RuleContext = {
+      filename,
+      sourceCode: content,
+      report: (suggestion) => suggestions.push(suggestion),
+      reportAutofix: (autofixableSuggestion) => {
+        suggestions.push(autofixableSuggestion);
+        autofixSuggestions.push(this.convertToAutofixSuggestion(autofixableSuggestion));
+      }
+    };
+
+    const ext = this.getFileExtension(filename);
+    
+    if (['.js', '.ts', '.jsx', '.tsx'].includes(ext)) {
+      this.analyzeJavaScript(content, context);
+    }
+    
+    // Run pattern-based rules for all files
+    this.analyzePatterns(context);
+    
+    const filteredSuggestions = suggestions.filter(suggestion => this.isRuleEnabled(suggestion.ruleId));
+    const filteredAutofixSuggestions = autofixSuggestions.filter(suggestion => this.isRuleEnabled(suggestion.ruleId));
+    
+    return { 
+      suggestions: filteredSuggestions, 
+      autofixSuggestions: filteredAutofixSuggestions 
+    };
+  }
+
+  applyAutofix(filename: string, content: string, options: AutofixOptions = {}): AutofixResult {
+    const { autofixSuggestions } = this.analyzeFileWithAutofix(filename, content);
+    const autofixEngine = new AutofixEngine(content, autofixSuggestions);
+    return autofixEngine.applyFixes(options);
+  }
+
+  private convertToAutofixSuggestion(suggestion: ModernizationSuggestion & AutofixCapable): AutofixSuggestion {
+    return {
+      file: suggestion.file,
+      ruleId: suggestion.ruleId,
+      edit: {
+        range: {
+          start: { line: suggestion.startLine, column: suggestion.startColumn },
+          end: { line: suggestion.endLine, column: suggestion.endColumn }
+        },
+        newText: suggestion.newCode
+      },
+      description: suggestion.description,
+      category: suggestion.category,
+      baselineStatus: suggestion.baselineStatus,
+      severity: suggestion.severity
+    };
   }
 
   private analyzeJavaScript(content: string, context: RuleContext): void {
@@ -80,25 +138,6 @@ export class RuleEngine {
     }
   }
 
-  private analyzeCSS(content: string, context: RuleContext): void {
-    try {
-      const root = postcss.parse(content);
-      
-      for (const [ruleId, rule] of this.rules) {
-        if (this.isRuleEnabled(ruleId) && rule.visitCSSRule) {
-          root.walkRules((cssRule: any) => {
-            try {
-              rule.visitCSSRule!(cssRule, context);
-            } catch (error) {
-              console.warn(`Rule ${ruleId} failed:`, error);
-            }
-          });
-        }
-      }
-    } catch (error) {
-      console.warn(`Failed to parse CSS file ${context.filename}:`, error);
-    }
-  }
 
   private analyzePatterns(context: RuleContext): void {
     for (const [ruleId, rule] of this.rules) {

@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
-import 'dotenv/config';
 import { Command } from 'commander';
 import { Reporter, ReportData } from './reporter';
-import { RuleEngine, builtinRules, defaultConfig } from './rules';
+import { RuleEngine, builtinRules, defaultConfig } from './rules/index';
 import { FileScanner } from './scanner';
 import { version } from '../package.json';
 import * as fs from 'fs';
@@ -25,6 +24,8 @@ program
   .argument('<filepath>', 'path to the file to analyze')
   .option('-v, --verbose', 'verbose output')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
+  .option('--fix', 'automatically apply safe fixes')
+  .option('--dry-run', 'preview fixes without applying them')
   .action(async (filepath: string, options) => {
     try {
       if (!fs.existsSync(filepath)) {
@@ -43,23 +44,72 @@ program
       for (const [ruleId, rule] of Object.entries(builtinRules)) {
         engine.registerRule(ruleId, rule);
       }
-      
-      const suggestions = engine.analyzeFile(filepath, content);
 
-      const reportData: ReportData = {
-        suggestions,
-        totalFiles: 1,
-        scannedFiles: [filepath],
-        totalContentSize: content.length,
-        errors: [],
-      };
+      // Handle autofix mode
+      if (options.fix || options.dryRun) {
+        const autofixResult = engine.applyAutofix(filepath, content, {
+          dryRun: options.dryRun,
+          safeOnly: true,
+          maxEdits: 50
+        });
 
-      const reporter = new Reporter();
-      const output = options.format === 'json'
-        ? reporter.formatJson(reportData)
-        : reporter.formatText(reportData);
+        if (options.verbose) {
+          console.log(`🔧 Autofix result: ${autofixResult.appliedEdits} edits applied, ${autofixResult.errors.length} errors`);
+        }
 
-      console.log(output);
+        if (!autofixResult.success) {
+          console.error(`❌ Autofix failed:`);
+          autofixResult.errors.forEach(error => {
+            console.error(`  - ${error.ruleId}: ${error.message}`);
+          });
+          process.exit(1);
+        }
+
+        if (options.dryRun) {
+          console.log(`🔍 Preview of ${autofixResult.appliedEdits} fixes that would be applied:\n`);
+          console.log(autofixResult.modifiedContent);
+        } else {
+          // Write the fixed content back to file
+          await fs.promises.writeFile(filepath, autofixResult.modifiedContent!);
+          console.log(`✅ Applied ${autofixResult.appliedEdits} autofix suggestions to ${filepath}`);
+        }
+
+        // Still show analysis even after autofix
+        const { suggestions } = engine.analyzeFileWithAutofix(filepath, content);
+        const reportData: ReportData = {
+          suggestions,
+          totalFiles: 1,
+          scannedFiles: [filepath],
+          totalContentSize: content.length,
+          errors: [],
+        };
+
+        if (!options.dryRun && suggestions.length > 0) {
+          const reporter = new Reporter();
+          const output = options.format === 'json'
+            ? reporter.formatJson(reportData)
+            : reporter.formatText(reportData);
+          console.log(`\n📋 Remaining suggestions:\n${output}`);
+        }
+      } else {
+        // Standard analysis mode
+        const suggestions = engine.analyzeFile(filepath, content);
+
+        const reportData: ReportData = {
+          suggestions,
+          totalFiles: 1,
+          scannedFiles: [filepath],
+          totalContentSize: content.length,
+          errors: [],
+        };
+
+        const reporter = new Reporter();
+        const output = options.format === 'json'
+          ? reporter.formatJson(reportData)
+          : reporter.formatText(reportData);
+
+        console.log(output);
+      }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
@@ -153,6 +203,8 @@ program
   .argument('[path]', 'path to the directory to analyze', '.')
   .option('-v, --verbose', 'verbose output')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
+  .option('--fix', 'automatically apply safe fixes')
+  .option('--dry-run', 'preview fixes without applying them')
   .option('--ignore <patterns>', 'comma-separated ignore patterns', 'node_modules/**,*.min.js,dist/**,build/**,.git/**,coverage/**')
   .option('--extensions <exts>', 'comma-separated file extensions', '.js,.ts,.jsx,.tsx')
   .option('--max-size <size>', 'maximum file size in KB', '1024')
@@ -201,21 +253,68 @@ program
       const allSuggestions = [];
       const processErrors = [];
       let totalContentSize = 0;
+      let totalFixesApplied = 0;
 
-      // Analyze each file
-      for (const fileInfo of scanResult.fileContents) {
-        try {
-          const suggestions = engine.analyzeFile(fileInfo.path, fileInfo.content);
-          allSuggestions.push(...suggestions);
-          totalContentSize += fileInfo.size;
-          
-          if (options.verbose) {
-            console.log(`✓ Analyzed ${fileInfo.path} (${suggestions.length} suggestions)`);
+      // Handle autofix mode for the scan command
+      if (options.fix || options.dryRun) {
+        if (options.verbose) {
+          console.log(`🔧 ${options.dryRun ? 'Previewing' : 'Applying'} autofix to ${scanResult.fileContents.length} files...`);
+        }
+
+        for (const fileInfo of scanResult.fileContents) {
+          try {
+            const autofixResult = engine.applyAutofix(fileInfo.path, fileInfo.content, {
+              dryRun: options.dryRun,
+              safeOnly: true,
+              maxEdits: 50
+            });
+
+            if (!autofixResult.success) {
+              processErrors.push(`Autofix failed for ${fileInfo.path}: ${autofixResult.errors.map(e => e.message).join(', ')}`);
+              continue;
+            }
+
+            totalFixesApplied += autofixResult.appliedEdits;
+
+            if (options.verbose) {
+              console.log(`✓ ${fileInfo.path}: ${autofixResult.appliedEdits} fixes ${options.dryRun ? 'would be applied' : 'applied'}`);
+            }
+
+            // Write fixed content back to file if not dry run
+            if (!options.dryRun && autofixResult.appliedEdits > 0) {
+              await fs.promises.writeFile(fileInfo.path, autofixResult.modifiedContent!);
+            }
+
+            // Still collect suggestions for reporting
+            const { suggestions } = engine.analyzeFileWithAutofix(fileInfo.path, fileInfo.content);
+            allSuggestions.push(...suggestions);
+            totalContentSize += fileInfo.size;
+
+          } catch (error) {
+            processErrors.push(`Failed to process ${fileInfo.path}: ${error}`);
+            if (options.verbose) {
+              console.log(`❌ Failed to process ${fileInfo.path}`);
+            }
           }
-        } catch (error) {
-          processErrors.push(`Failed to analyze ${fileInfo.path}: ${error}`);
-          if (options.verbose) {
-            console.log(`❌ Failed to analyze ${fileInfo.path}`);
+        }
+
+        console.log(`\n${options.dryRun ? '🔍 Preview complete' : '✅ Autofix complete'}: ${totalFixesApplied} fixes ${options.dryRun ? 'would be applied' : 'applied'} across ${scanResult.fileContents.length} files`);
+      } else {
+        // Standard analysis mode
+        for (const fileInfo of scanResult.fileContents) {
+          try {
+            const suggestions = engine.analyzeFile(fileInfo.path, fileInfo.content);
+            allSuggestions.push(...suggestions);
+            totalContentSize += fileInfo.size;
+            
+            if (options.verbose) {
+              console.log(`✓ Analyzed ${fileInfo.path} (${suggestions.length} suggestions)`);
+            }
+          } catch (error) {
+            processErrors.push(`Failed to analyze ${fileInfo.path}: ${error}`);
+            if (options.verbose) {
+              console.log(`❌ Failed to analyze ${fileInfo.path}`);
+            }
           }
         }
       }

@@ -1,5 +1,5 @@
 import * as t from '@babel/types';
-import { RuleDefinition, RuleContext } from './types';
+import { RuleDefinition, RuleContext, AutofixCapable } from './types';
 
 export const indexOfToIncludesRule: RuleDefinition = {
   name: 'indexOf-to-includes',
@@ -34,18 +34,28 @@ export const indexOfToIncludesRule: RuleDefinition = {
           ? `${objectCode}?.includes(${argCode})`
           : `${objectCode}.includes(${argCode})`;
         
-        context.report({
+        const suggestion = {
           file: context.filename,
           line: loc.start.line,
           column: loc.start.column,
           oldCode: leftExpressionCode + ' !== -1',
           newCode: newCode,
           description: 'Array.includes() is Baseline stable and more readable than indexOf comparison',
-          category: 'javascript',
-          baselineStatus: 'high',
+          category: 'javascript' as const,
+          baselineStatus: 'high' as const,
           ruleId: 'indexOf-to-includes',
-          severity: 'info'
-        });
+          severity: 'info' as const,
+          startLine: loc.start.line,
+          startColumn: loc.start.column,
+          endLine: loc.end.line,
+          endColumn: loc.end.column
+        };
+
+        context.report(suggestion);
+        
+        if (context.reportAutofix) {
+          context.reportAutofix(suggestion);
+        }
       }
     }
     
@@ -72,18 +82,28 @@ export const indexOfToIncludesRule: RuleDefinition = {
           ? `${objectCode}?.includes(${argCode})`
           : `${objectCode}.includes(${argCode})`;
         
-        context.report({
+        const suggestion = {
           file: context.filename,
           line: loc.start.line,
           column: loc.start.column,
           oldCode: leftExpressionCode + ' >= 0',
           newCode: newCode,
           description: 'Array.includes() is Baseline stable and more readable than indexOf comparison',
-          category: 'javascript',
-          baselineStatus: 'high',
+          category: 'javascript' as const,
+          baselineStatus: 'high' as const,
           ruleId: 'indexOf-to-includes',
-          severity: 'info'
-        });
+          severity: 'info' as const,
+          startLine: loc.start.line,
+          startColumn: loc.start.column,
+          endLine: loc.end.line,
+          endColumn: loc.end.column
+        };
+
+        context.report(suggestion);
+        
+        if (context.reportAutofix) {
+          context.reportAutofix(suggestion);
+        }
       }
     }
     
@@ -112,18 +132,28 @@ export const indexOfToIncludesRule: RuleDefinition = {
           ? `${objectCode}?.includes(${argCode})`
           : `${objectCode}.includes(${argCode})`;
         
-        context.report({
+        const suggestion = {
           file: context.filename,
           line: loc.start.line,
           column: loc.start.column,
           oldCode: leftExpressionCode + ' > -1',
           newCode: newCode,
           description: 'Array.includes() is Baseline stable and more readable than indexOf comparison',
-          category: 'javascript',
-          baselineStatus: 'high',
+          category: 'javascript' as const,
+          baselineStatus: 'high' as const,
           ruleId: 'indexOf-to-includes',
-          severity: 'info'
-        });
+          severity: 'info' as const,
+          startLine: loc.start.line,
+          startColumn: loc.start.column,
+          endLine: loc.end.line,
+          endColumn: loc.end.column
+        };
+
+        context.report(suggestion);
+        
+        if (context.reportAutofix) {
+          context.reportAutofix(suggestion);
+        }
       }
     }
   }
