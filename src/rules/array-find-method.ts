@@ -20,6 +20,7 @@ export const arrayFindMethodRule: RuleDefinition = {
 
         const suggestion = hasReturn ? 'Array.find()' : 'Array.findIndex()';
 
+        // First report the issue for display
         context.report({
           file: context.filename,
           line: loc.start.line,
@@ -32,6 +33,29 @@ export const arrayFindMethodRule: RuleDefinition = {
           ruleId: 'array-find-method',
           severity: 'info'
         });
+
+        // Then report with autofix capability if possible
+        if (context.reportAutofix) {
+          const autofixCode = generateAutofixForLoop(node, context.sourceCode, hasReturn);
+          if (autofixCode) {
+            context.reportAutofix({
+              file: context.filename,
+              line: loc.start.line,
+              column: loc.start.column,
+              oldCode: 'for loop with break/return',
+              newCode: autofixCode,
+              description: `${suggestion} is Baseline stable and more readable than manual loops`,
+              category: 'javascript',
+              baselineStatus: 'high',
+              ruleId: 'array-find-method',
+              severity: 'info',
+              startLine: loc.start.line,
+              startColumn: loc.start.column,
+              endLine: loc.end.line,
+              endColumn: loc.end.column
+            });
+          }
+        }
       }
     }
     
@@ -50,19 +74,41 @@ export const arrayFindMethodRule: RuleDefinition = {
 
       const arrayCode = context.sourceCode.slice(node.object.callee.object.start!, node.object.callee.object.end!);
       const filterArg = context.sourceCode.slice(node.object.arguments[0].start!, node.object.arguments[0].end!);
+      const oldCode = `${arrayCode}.filter(${filterArg})[0]`;
+      const newCode = `${arrayCode}.find(${filterArg})`;
 
       context.report({
         file: context.filename,
         line: loc.start.line,
         column: loc.start.column,
-        oldCode: `${arrayCode}.filter(${filterArg})[0]`,
-        newCode: `${arrayCode}.find(${filterArg})`,
+        oldCode,
+        newCode,
         description: 'Array.find() is more efficient and clearer than filter()[0]',
         category: 'javascript',
         baselineStatus: 'high',
         ruleId: 'array-find-method',
         severity: 'info'
       });
+
+      // Report autofix capability
+      if (context.reportAutofix) {
+        context.reportAutofix({
+          file: context.filename,
+          line: loc.start.line,
+          column: loc.start.column,
+          oldCode,
+          newCode,
+          description: 'Array.find() is more efficient and clearer than filter()[0]',
+          category: 'javascript',
+          baselineStatus: 'high',
+          ruleId: 'array-find-method',
+          severity: 'info',
+          startLine: loc.start.line,
+          startColumn: loc.start.column,
+          endLine: loc.end.line,
+          endColumn: loc.end.column
+        });
+      }
     }
   }
 };
@@ -87,4 +133,18 @@ function findInBlock(blockStatement: any, predicate: (node: any) => boolean): bo
     }
   }
   return false;
+}
+
+function generateAutofixForLoop(node: any, sourceCode: string, hasReturn: boolean): string | null {
+  // This is a complex transformation that would require sophisticated AST analysis
+  // For now, we'll return null to indicate that manual review is needed
+  // In a full implementation, this would:
+  // 1. Parse the for loop structure
+  // 2. Extract the array being iterated
+  // 3. Extract the condition being checked
+  // 4. Generate the appropriate Array.find() or Array.findIndex() call
+  
+  // Simple pattern matching for basic cases could be implemented here
+  // For the hackathon, we'll focus on the filter()[0] pattern which is easier to autofix
+  return null;
 };
