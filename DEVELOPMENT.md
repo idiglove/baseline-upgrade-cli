@@ -320,11 +320,42 @@ baseline-upgrade scan . --extensions ".js,.ts,.jsx,.tsx" --format json
 
 **Impact**: This completes the core functionality roadmap, making the tool practical for real-world codebase modernization at scale.
 
+## Key Learnings from Industry Tools
+
+### 1. LSP TextEdit Principles
+- Apply edits **bottom-to-top** to avoid position shifts
+- Apply same-line edits **right-to-left** to prevent interference  
+- All TextEdits reference the **original document state**
+- **No overlapping edits** are supported
+
+### 2. ESLint's Approach
+- When multiple fixes target the same position, **only one is applied**
+- Fixes are sorted by position and applied in reverse order
+- Conflicting fixes are automatically filtered out
+
+### 3. Prettier's Strategy
+- Uses **single AST pass** with comprehensive transformations
+- Avoids position conflicts by working on the AST level
+- Rebuilds the entire code from AST rather than applying patches
+
+### 4. Auto-Fix Implementation Challenges
+- **Position calculation errors** cause broken syntax when applying fixes
+- **Duplicate suggestions** from multiple rules need deduplication
+- **Parse errors** block entire files from being processed
+- **Rule precision** is more valuable than rule quantity
+
+### 5. Conflict Resolution Best Practices
+- Sort suggestions by position (end position descending)
+- Apply deduplication using range overlap detection
+- Handle null/undefined positions gracefully
+- Use try-catch blocks around individual rule applications
+- Validate that old code matches expected content before applying fixes
+
 ## Next Steps After MVP
 
 1. ~~Add full directory scanning~~ ✅ **COMPLETED**
-2. Add CSS parsing and rules
-3. Implement auto-fix capability
+2. Implement auto-fix capability
+3. Add CSS parsing and rules
 4. Add interactive mode
 5. Create HTML report generation
 6. Add bundle size impact analysis
