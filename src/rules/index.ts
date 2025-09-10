@@ -9,7 +9,6 @@ import { arrayFlatMethodRule } from './array-flat-method';
 import { stringMethodsRule } from './string-methods';
 import { stringRepeatMethodRule } from './string-repeat-method';
 import { objectMethodsRule } from './object-methods';
-import { objectAssignMethodRule } from './object-assign-method';
 import { asyncAwaitRule } from './async-await';
 
 // Built-in rules registry
@@ -24,7 +23,6 @@ export const builtinRules: Record<string, RuleDefinition> = {
   'string-methods': stringMethodsRule,
   'string-repeat-method': stringRepeatMethodRule,
   'object-methods': objectMethodsRule,
-  'object-assign-method': objectAssignMethodRule,
   'async-await': asyncAwaitRule,
 };
 
@@ -43,7 +41,6 @@ export const defaultConfig: { rules: RuleConfig } = {
     'string-methods': 'info' as const,
     'string-repeat-method': 'info' as const,
     'object-methods': 'info' as const,
-    'object-assign-method': 'info' as const,
     'async-await': 'info' as const,
   }
 };

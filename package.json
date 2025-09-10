@@ -1,6 +1,6 @@
 {
   "name": "baseline-upgrade",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "CLI tool that scans codebases and suggests modern web feature upgrades using Baseline data",
   "main": "dist/cli.js",
   "bin": {

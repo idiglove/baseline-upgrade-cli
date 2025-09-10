@@ -83,14 +83,6 @@ export class EmbeddingsEngine {
       searchTerms: ['array creation', 'loop push', 'iteration', 'map']
     });
 
-    // Object.assign -> spread operator
-    this.addPattern({
-      pattern: 'Object\\.assign\\s*\\(',
-      featureKey: 'object-spread', // This might be covered by spread syntax
-      modernSyntax: 'object spread syntax',
-      description: 'Use object spread syntax {...} for cleaner object merging',
-      searchTerms: ['Object.assign', 'object merge', 'spread', 'clone']
-    });
   }
 
   private addPattern(pattern: PatternMapping): void {
