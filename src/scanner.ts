@@ -51,7 +51,6 @@ export class FileScanner {
       const stats = await fs.promises.stat(resolvedPath);
 
       if (stats.isFile()) {
-        // Handle single file
         if (this.isTargetFile(path.basename(resolvedPath))) {
           result.files.push(resolvedPath);
           
@@ -62,7 +61,6 @@ export class FileScanner {
           result.errors.push(`File type not supported: ${resolvedPath}`);
         }
       } else if (stats.isDirectory()) {
-        // Handle directory
         await this.scanDirectory(resolvedPath, result);
       } else {
         result.errors.push(`Path is not a file or directory: ${resolvedPath}`);
@@ -106,7 +104,6 @@ export class FileScanner {
 
   private async readFileContent(filePath: string, result: ScanResult): Promise<void> {
     try {
-      // Check file size first to avoid reading huge files
       const stats = await fs.promises.stat(filePath);
 
       if (stats.size > this.maxFileSize) {

@@ -7,6 +7,9 @@ import { FileScanner } from './scanner';
 import { version } from '../package.json';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
+import { defaultScoringSystem, ScoreResult } from './scoring';
+import { defaultBadgeSystem, Badge } from './badges';
+import { defaultReadmeUpdater, ReadmeUpdateOptions } from './readme-updater';
 
 const program = new Command();
 
@@ -17,6 +20,59 @@ program
   )
   .version(version);
 
+async function updateReadmeWithBadges(suggestions: any[], scoreResult?: ScoreResult, options: any = {}) {
+  try {
+    const finalScoreResult = scoreResult || defaultScoringSystem.calculateScore(suggestions);
+    const earnedBadges = defaultBadgeSystem.getEarnedBadges(finalScoreResult);
+
+    if (earnedBadges.length === 0 && finalScoreResult.totalScore === 0) {
+      const updateOptions: ReadmeUpdateOptions = {
+        badges: [],
+        scoreResult: finalScoreResult,
+        overwrite: options.overwrite,
+        backup: options.backup,
+      };
+
+      const result = defaultReadmeUpdater.updateReadme(updateOptions);
+      if (result.success && options.verbose) {
+        console.log('\n📝 Perfect score! Updated README with score badge.');
+      }
+      return;
+    }
+
+    if (earnedBadges.length === 0) {
+      if (options.verbose) {
+        console.log('No badges earned to add to README.');
+      }
+      return;
+    }
+
+    const updateOptions: ReadmeUpdateOptions = {
+      badges: earnedBadges,
+      scoreResult: finalScoreResult,
+      overwrite: options.overwrite,
+      backup: options.backup,
+    };
+
+    const result = defaultReadmeUpdater.updateReadme(updateOptions);
+    
+    if (result.success) {
+      console.log('\n📝 ' + result.message);
+      console.log('🏆 Earned Badges:');
+      earnedBadges.forEach(badge => {
+        console.log(`  • ${badge.name}`);
+      });
+      console.log(`🎯 Score: ${finalScoreResult.totalScore}`);
+    } else if (options.verbose) {
+      console.log('ℹ️  ' + result.message);
+    }
+  } catch (error) {
+    if (options.verbose) {
+      console.log('⚠️  Failed to update README:', error instanceof Error ? error.message : error);
+    }
+  }
+}
+
 // Per-file analysis command
 program
   .command('file')
@@ -26,6 +82,11 @@ program
   .option('-f, --format <type>', 'output format (text, json)', 'text')
   .option('--fix', 'automatically apply safe fixes')
   .option('--dry-run', 'preview fixes without applying them')
+  .option('--no-score', 'disable scoring system')
+  .option('--no-badges', 'disable badge system')
+  .option('--update-readme', 'automatically update README with earned badges')
+  .option('--readme-overwrite', 'overwrite existing README content when updating')
+  .option('--readme-backup', 'create backup of original README when updating')
   .action(async (filepath: string, options) => {
     try {
       if (!fs.existsSync(filepath)) {
@@ -45,7 +106,6 @@ program
         engine.registerRule(ruleId, rule);
       }
 
-      // Handle autofix mode
       if (options.fix || options.dryRun) {
         const autofixResult = engine.applyAutofix(filepath, content, {
           dryRun: options.dryRun,
@@ -69,19 +129,23 @@ program
           console.log(`🔍 Preview of ${autofixResult.appliedEdits} fixes that would be applied:\n`);
           console.log(autofixResult.modifiedContent);
         } else {
-          // Write the fixed content back to file
           await fs.promises.writeFile(filepath, autofixResult.modifiedContent!);
           console.log(`✅ Applied ${autofixResult.appliedEdits} autofix suggestions to ${filepath}`);
         }
 
-        // Still show analysis even after autofix
         const { suggestions } = engine.analyzeFileWithAutofix(filepath, content);
+        
+        const scoreResult = options.score !== false ? defaultScoringSystem.calculateScore(suggestions) : undefined;
+        const earnedBadges = options.badges !== false && scoreResult ? defaultBadgeSystem.getEarnedBadges(scoreResult) : undefined;
+
         const reportData: ReportData = {
           suggestions,
           totalFiles: 1,
           scannedFiles: [filepath],
           totalContentSize: content.length,
           errors: [],
+          scoreResult,
+          earnedBadges,
         };
 
         if (!options.dryRun && suggestions.length > 0) {
@@ -91,9 +155,19 @@ program
             : reporter.formatText(reportData);
           console.log(`\n📋 Remaining suggestions:\n${output}`);
         }
+
+        if (options.updateReadme) {
+          await updateReadmeWithBadges(suggestions, scoreResult, {
+            verbose: options.verbose,
+            overwrite: options.readmeOverwrite,
+            backup: options.readmeBackup
+          });
+        }
       } else {
-        // Standard analysis mode
         const suggestions = engine.analyzeFile(filepath, content);
+
+        const scoreResult = options.score !== false ? defaultScoringSystem.calculateScore(suggestions) : undefined;
+        const earnedBadges = options.badges !== false && scoreResult ? defaultBadgeSystem.getEarnedBadges(scoreResult) : undefined;
 
         const reportData: ReportData = {
           suggestions,
@@ -101,6 +175,8 @@ program
           scannedFiles: [filepath],
           totalContentSize: content.length,
           errors: [],
+          scoreResult,
+          earnedBadges,
         };
 
         const reporter = new Reporter();
@@ -109,6 +185,15 @@ program
           : reporter.formatText(reportData);
 
         console.log(output);
+
+        // Update README if requested
+        if (options.updateReadme) {
+          await updateReadmeWithBadges(suggestions, scoreResult, {
+            verbose: options.verbose,
+            overwrite: options.readmeOverwrite,
+            backup: options.readmeBackup
+          });
+        }
       }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
@@ -123,13 +208,17 @@ program
   .argument('[commit]', 'git commit hash (defaults to latest commit)', 'HEAD')
   .option('-v, --verbose', 'verbose output')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
+  .option('--no-score', 'disable scoring system')
+  .option('--no-badges', 'disable badge system')
+  .option('--update-readme', 'automatically update README with earned badges')
+  .option('--readme-overwrite', 'overwrite existing README content when updating')
+  .option('--readme-backup', 'create backup of original README when updating')
   .action(async (commit: string, options) => {
     try {
       if (options.verbose) {
         console.log(`🚀 Analyzing git commit ${commit} for modernization opportunities...`);
       }
 
-      // Get git diff for the commit
       let diffOutput: string;
       try {
         diffOutput = execSync(`git show ${commit} --pretty=format: --name-only`, { encoding: 'utf8' });
@@ -151,7 +240,6 @@ program
         console.log(`Found ${changedFiles.length} changed files`);
       }
 
-      // Initialize rule engine
       const engine = new RuleEngine(defaultConfig.rules);
       for (const [ruleId, rule] of Object.entries(builtinRules)) {
         engine.registerRule(ruleId, rule);
@@ -176,12 +264,17 @@ program
         }
       }
 
+      const scoreResult = options.score !== false ? defaultScoringSystem.calculateScore(allSuggestions) : undefined;
+      const earnedBadges = options.badges !== false && scoreResult ? defaultBadgeSystem.getEarnedBadges(scoreResult) : undefined;
+
       const reportData: ReportData = {
         suggestions: allSuggestions,
         totalFiles: changedFiles.length,
         scannedFiles: changedFiles,
         totalContentSize: 0,
         errors,
+        scoreResult,
+        earnedBadges,
       };
 
       const reporter = new Reporter();
@@ -190,6 +283,15 @@ program
         : reporter.formatText(reportData);
 
       console.log(output);
+
+      // Update README if requested
+      if (options.updateReadme) {
+        await updateReadmeWithBadges(allSuggestions, scoreResult, {
+          verbose: options.verbose,
+          overwrite: options.readmeOverwrite,
+          backup: options.readmeBackup
+        });
+      }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
@@ -208,18 +310,22 @@ program
   .option('--ignore <patterns>', 'comma-separated ignore patterns', 'node_modules/**,*.min.js,dist/**,build/**,.git/**,coverage/**')
   .option('--extensions <exts>', 'comma-separated file extensions', '.js,.ts,.jsx,.tsx')
   .option('--max-size <size>', 'maximum file size in KB', '1024')
+  .option('--no-score', 'disable scoring system')
+  .option('--no-badges', 'disable badge system')
+  .option('--leaderboard', 'output leaderboard-ready format')
+  .option('--update-readme', 'automatically update README with earned badges')
+  .option('--readme-overwrite', 'overwrite existing README content when updating')
+  .option('--readme-backup', 'create backup of original README when updating')
   .action(async (scanPath: string, options) => {
     try {
       if (options.verbose) {
         console.log(`🚀 Scanning ${scanPath} for modernization opportunities...`);
       }
 
-      // Parse options
       const ignorePatterns = options.ignore.split(',').map((p: string) => p.trim());
       const extensions = options.extensions.split(',').map((e: string) => e.trim().startsWith('.') ? e.trim() : `.${e.trim()}`);
       const maxFileSize = parseInt(options.maxSize) * 1024; // Convert KB to bytes
 
-      // Initialize scanner
       const scanner = new FileScanner({
         ignorePatterns,
         extensions,
@@ -227,7 +333,6 @@ program
         maxFileSize,
       });
 
-      // Scan directory
       const scanResult = await scanner.scan(scanPath);
 
       if (scanResult.errors.length > 0 && options.verbose) {
@@ -255,7 +360,6 @@ program
       let totalContentSize = 0;
       let totalFixesApplied = 0;
 
-      // Handle autofix mode for the scan command
       if (options.fix || options.dryRun) {
         if (options.verbose) {
           console.log(`🔧 ${options.dryRun ? 'Previewing' : 'Applying'} autofix to ${scanResult.fileContents.length} files...`);
@@ -280,12 +384,10 @@ program
               console.log(`✓ ${fileInfo.path}: ${autofixResult.appliedEdits} fixes ${options.dryRun ? 'would be applied' : 'applied'}`);
             }
 
-            // Write fixed content back to file if not dry run
             if (!options.dryRun && autofixResult.appliedEdits > 0) {
               await fs.promises.writeFile(fileInfo.path, autofixResult.modifiedContent!);
             }
 
-            // Still collect suggestions for reporting
             const { suggestions } = engine.analyzeFileWithAutofix(fileInfo.path, fileInfo.content);
             allSuggestions.push(...suggestions);
             totalContentSize += fileInfo.size;
@@ -300,7 +402,6 @@ program
 
         console.log(`\n${options.dryRun ? '🔍 Preview complete' : '✅ Autofix complete'}: ${totalFixesApplied} fixes ${options.dryRun ? 'would be applied' : 'applied'} across ${scanResult.fileContents.length} files`);
       } else {
-        // Standard analysis mode
         for (const fileInfo of scanResult.fileContents) {
           try {
             const suggestions = engine.analyzeFile(fileInfo.path, fileInfo.content);
@@ -318,6 +419,8 @@ program
           }
         }
       }
+      const scoreResult = options.score !== false ? defaultScoringSystem.calculateScore(allSuggestions) : undefined;
+      const earnedBadges = options.badges !== false && scoreResult ? defaultBadgeSystem.getEarnedBadges(scoreResult) : undefined;
 
       const reportData: ReportData = {
         suggestions: allSuggestions,
@@ -325,6 +428,89 @@ program
         scannedFiles: scanResult.fileContents.map(f => f.path),
         totalContentSize,
         errors: [...scanResult.errors, ...processErrors],
+        scoreResult,
+        earnedBadges,
+      };
+
+      const reporter = new Reporter();
+      
+      if (options.leaderboard) {
+        if (scoreResult) {
+          console.log(`SCORE:${scoreResult.totalScore}`);
+          console.log(`BASELINE_APPROVED:${scoreResult.baselineApproved}`);
+          console.log(`TOTAL_SUGGESTIONS:${allSuggestions.length}`);
+          console.log(`FILES_SCANNED:${scanResult.fileContents.length}`);
+        }
+      } else {
+        const output = options.format === 'json'
+          ? reporter.formatJson(reportData)
+          : reporter.formatText(reportData);
+
+        console.log(output);
+      }
+
+      if (options.updateReadme) {
+        await updateReadmeWithBadges(allSuggestions, scoreResult, {
+          verbose: options.verbose,
+          overwrite: options.readmeOverwrite,
+          backup: options.readmeBackup
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Score command - just calculate score without full analysis
+program
+  .command('score')
+  .description('Calculate score from existing analysis results')
+  .argument('[file]', 'JSON file with analysis results', '')
+  .option('-f, --format <type>', 'output format (text, json)', 'text')
+  .option('--update-readme', 'automatically update README with earned badges')
+  .option('--readme-overwrite', 'overwrite existing README content when updating')
+  .option('--readme-backup', 'create backup of original README when updating')
+  .action(async (file: string, options) => {
+    try {
+      let suggestions: any[] = [];
+      
+      if (file) {
+        if (!fs.existsSync(file)) {
+          console.error(`❌ File not found: ${file}`);
+          process.exit(1);
+        }
+        
+        const data = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+        suggestions = data.suggestions || [];
+      } else {
+        let input = '';
+        process.stdin.setEncoding('utf8');
+        process.stdin.on('data', (chunk) => {
+          input += chunk;
+        });
+        
+        await new Promise((resolve) => {
+          process.stdin.on('end', resolve);
+        });
+        
+        if (input) {
+          const data = JSON.parse(input);
+          suggestions = data.suggestions || [];
+        }
+      }
+
+      const scoreResult = defaultScoringSystem.calculateScore(suggestions);
+      const earnedBadges = defaultBadgeSystem.getEarnedBadges(scoreResult);
+
+      const reportData: ReportData = {
+        suggestions,
+        totalFiles: 0,
+        scannedFiles: [],
+        totalContentSize: 0,
+        errors: [],
+        scoreResult,
+        earnedBadges,
       };
 
       const reporter = new Reporter();
@@ -333,6 +519,194 @@ program
         : reporter.formatText(reportData);
 
       console.log(output);
+
+      // Update README if requested
+      if (options.updateReadme) {
+        await updateReadmeWithBadges(suggestions, scoreResult, {
+          verbose: false,
+          overwrite: options.readmeOverwrite,
+          backup: options.readmeBackup
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Badges command - show available badges
+program
+  .command('badges')
+  .description('Show available badges and their criteria')
+  .option('-f, --format <type>', 'output format (text, json, markdown)', 'text')
+  .action((options) => {
+    const badges = defaultBadgeSystem.getAllBadges();
+    
+    if (options.format === 'json') {
+      console.log(JSON.stringify(badges, null, 2));
+    } else if (options.format === 'markdown') {
+      console.log('# Available Badges\n');
+      badges.forEach(badge => {
+        console.log(`## ${badge.name}`);
+        console.log(`![](${badge.svgUrl})`);
+        console.log(`${badge.description}`);
+        console.log('');
+      });
+    } else {
+      console.log('🏆 Available Badges:\n');
+      badges.forEach(badge => {
+        console.log(`• ${badge.name}: ${badge.description}`);
+        console.log(`  Badge: ${badge.markdown}`);
+        console.log('');
+      });
+    }
+  });
+
+// README update command
+program
+  .command('update-readme')
+  .description('Update README with earned badges from analysis')
+  .option('--readme-path <path>', 'path to README file', '')
+  .option('--create', 'create README if it does not exist')
+  .option('--overwrite', 'overwrite existing README content')
+  .option('--backup', 'create backup of original README')
+  .option('--from-file <file>', 'JSON file with analysis results', '')
+  .action(async (options) => {
+    try {
+      let suggestions: any[] = [];
+      let scoreResult: ScoreResult | undefined;
+
+      if (options.fromFile) {
+        if (!fs.existsSync(options.fromFile)) {
+          console.error(`❌ File not found: ${options.fromFile}`);
+          process.exit(1);
+        }
+        
+        const data = JSON.parse(await fs.promises.readFile(options.fromFile, 'utf8'));
+        suggestions = data.suggestions || [];
+        scoreResult = data.scoreResult;
+      } else {
+        console.error('❌ Please provide analysis results with --from-file');
+        process.exit(1);
+      }
+
+      if (!scoreResult) {
+        scoreResult = defaultScoringSystem.calculateScore(suggestions);
+      }
+
+      const earnedBadges = defaultBadgeSystem.getEarnedBadges(scoreResult);
+
+      if (earnedBadges.length === 0 && scoreResult.totalScore === 0) {
+        console.log('Perfect score (0) achieved! No suggestions found.');
+      } else if (earnedBadges.length === 0) {
+        console.log('No badges earned. Run analysis first to earn badges.');
+        return;
+      }
+
+      const updateOptions: ReadmeUpdateOptions = {
+        readmePath: options.readmePath || undefined,
+        badges: earnedBadges,
+        scoreResult: scoreResult,
+        overwrite: options.overwrite,
+        backup: options.backup,
+      };
+
+      if (options.create) {
+        const result = defaultReadmeUpdater.createReadmeIfNotExists(earnedBadges, scoreResult);
+        console.log(result.message);
+        if (!result.success) {
+          process.exit(1);
+        }
+      } else {
+        const result = defaultReadmeUpdater.updateReadme(updateOptions);
+        console.log(result.message);
+        if (!result.success) {
+          process.exit(1);
+        }
+      }
+
+      console.log('\n🏆 Earned Badges:');
+      earnedBadges.forEach(badge => {
+        console.log(`  • ${badge.name}: ${badge.description}`);
+      });
+
+      if (scoreResult) {
+        console.log(`\n🎯 Score: ${scoreResult.totalScore} - ${defaultScoringSystem.getScoreInterpretation(scoreResult.totalScore)}`);
+      }
+
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Show badges command
+program
+  .command('show-badges')
+  .description('Show badges that would be earned for a given score')
+  .option('-s, --score <score>', 'target score to simulate', '0')
+  .option('-j, --javascript <count>', 'JavaScript suggestions count', '0')
+  .option('-c, --css <count>', 'CSS suggestions count', '0')
+  .option('-h, --html <count>', 'HTML suggestions count', '0')
+  .option('-p, --performance <count>', 'Performance suggestions count', '0')
+  .option('-e, --errors <count>', 'Error severity count', '0')
+  .option('-w, --warnings <count>', 'Warning severity count', '0')
+  .option('-i, --info <count>', 'Info severity count', '0')
+  .action((options) => {
+    try {
+      const mockScoreResult: ScoreResult = {
+        totalScore: parseFloat(options.score),
+        baselineApproved: parseFloat(options.score) >= -5,
+        suggestionsCount: 
+          parseInt(options.javascript) + 
+          parseInt(options.css) + 
+          parseInt(options.html) + 
+          parseInt(options.performance),
+        suggestionsByCategory: {
+          javascript: parseInt(options.javascript),
+          css: parseInt(options.css),
+          html: parseInt(options.html),
+          performance: parseInt(options.performance),
+        },
+        suggestionsBySeverity: {
+          error: parseInt(options.errors),
+          warn: parseInt(options.warnings),
+          info: parseInt(options.info),
+        },
+        suggestionsByBaselineStatus: {
+          high: 0,
+          low: 0,
+          limited: 0,
+          'not supported': 0,
+        },
+      };
+
+      const earnedBadges = defaultBadgeSystem.getEarnedBadges(mockScoreResult);
+
+      console.log('🎯 Simulated Badges for Score:', options.score);
+      console.log('📊 Statistics:');
+      console.log(`  • JavaScript: ${options.javascript}`);
+      console.log(`  • CSS: ${options.css}`);
+      console.log(`  • HTML: ${options.html}`);
+      console.log(`  • Performance: ${options.performance}`);
+      console.log(`  • Errors: ${options.errors}`);
+      console.log(`  • Warnings: ${options.warnings}`);
+      console.log(`  • Info: ${options.info}`);
+      console.log(`  • Baseline Approved: ${mockScoreResult.baselineApproved}`);
+
+      if (earnedBadges.length === 0) {
+        console.log('\nNo badges would be earned with these metrics.');
+        return;
+      }
+
+      console.log('\n🏆 Would Earn These Badges:');
+      earnedBadges.forEach(badge => {
+        console.log(`  • ${badge.name}: ${badge.description}`);
+      });
+
+      console.log('\n📝 Badge Markdown:');
+      console.log(defaultBadgeSystem.generateBadgesMarkdown(earnedBadges));
+
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
