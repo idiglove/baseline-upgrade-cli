@@ -21,7 +21,6 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "analyze:file": "node dist/cli.js file",
-<<<<<<< HEAD
     "analyze:file:badges": "node dist/cli.js file --update-readme",
     "analyze:commit": "node dist/cli.js commit",
     "analyze:commit:badges": "node dist/cli.js commit --update-readme",
@@ -29,9 +28,6 @@
     "update-badges": "node dist/cli.js update-readme --from-file analysis.json",
     "create-readme": "node dist/cli.js update-readme --create --from-file analysis.json",
     "show-badges": "node dist/cli.js show-badges --score 95 --javascript 10 --css 3"
-=======
-    "analyze:commit": "node dist/cli.js commit"
->>>>>>> b981513a6fff31fe70f31aee210a4160c5de3f47
   },
   "keywords": [
     "cli",
