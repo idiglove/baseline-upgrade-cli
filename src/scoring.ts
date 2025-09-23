@@ -1,7 +1,7 @@
 import { ModernizationSuggestion } from './rules/types';
 
 export interface ScoreResult {
-  totalScore: number; // Negative score, where 0 is best
+  totalScore: number; 
   baselineApproved: boolean;
   suggestionsCount: number;
   suggestionsByCategory: {
@@ -16,25 +16,25 @@ export interface ScoreResult {
     info: number;
   };
   suggestionsByBaselineStatus: {
-    high: number;    // Stable features (should be adopted)
-    low: number;     // Newly available (good to adopt)
-    limited: number; // Limited support (caution)
-    'not supported': number; // Not ready (ignore)
+    high: number;
+    low: number;
+    limited: number;
+    'not supported': number;
   };
 }
 
 export interface ScoringConfig {
-  baselineApprovalThreshold: number; // Max negative score to be considered approved
+  baselineApprovalThreshold: number;
   pointsPerSuggestion: {
     error: number;
     warn: number;
     info: number;
   };
   baselineStatusMultipliers: {
-    high: number;    // Stable features - most important to fix
-    low: number;     // Newly available - good to fix
-    limited: number; // Limited support - less critical
-    'not supported': number; // Not ready - least critical
+    high: number;
+    low: number; 
+    limited: number;
+    'not supported': number;
   };
   categoryMultipliers: {
     javascript: number;
@@ -151,5 +151,4 @@ export class ScoringSystem {
   }
 }
 
-// Default scoring system instance
 export const defaultScoringSystem = new ScoringSystem();
