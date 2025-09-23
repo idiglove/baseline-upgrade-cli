@@ -1,0 +1,240 @@
+/**
+ * CSS Test file mixing modern and legacy features
+ * Tests CSS-related baseline features and modernization opportunities
+ */
+
+/* ❌ BAD: Legacy float-based layout (should suggest CSS Grid/Flexbox) */
+.legacy-layout {
+  float: left;
+  width: 33.33%;
+}
+
+.legacy-clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* ✅ GOOD: Already using modern CSS Grid */
+.modern-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+/* ❌ BAD: Vendor prefixes for properties that no longer need them */
+.legacy-prefixes {
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+  
+  -webkit-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  -moz-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ✅ GOOD: Modern CSS without unnecessary prefixes */
+.modern-styles {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateX(10px);
+}
+
+/* ❌ BAD: Legacy flexbox syntax */
+.legacy-flex {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+  
+  -webkit-box-pack: center;
+  -moz-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+
+/* ✅ GOOD: Modern flexbox */
+.modern-flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ❌ BAD: No CSS custom properties (could suggest CSS variables) */
+.legacy-theming {
+  color: #3498db;
+  background-color: #2c3e50;
+  border-color: #3498db;
+}
+
+.legacy-theming-alt {
+  color: #3498db;
+  background-color: #34495e;
+  border-color: #3498db;
+}
+
+/* ✅ GOOD: Already using CSS custom properties */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --accent-color: #e74c3c;
+}
+
+.modern-theming {
+  color: var(--primary-color);
+  background-color: var(--secondary-color);
+  border-color: var(--primary-color);
+}
+
+/* ❌ BAD: Legacy positioning and sizing */
+.legacy-positioning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -50px;
+  margin-left: -100px;
+  width: 200px;
+  height: 100px;
+}
+
+/* ✅ GOOD: Modern positioning with transform */
+.modern-positioning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 100px;
+}
+
+/* ❌ BAD: Legacy media queries without modern features */
+@media screen and (max-width: 768px) {
+  .legacy-responsive {
+    width: 100%;
+    float: none;
+  }
+}
+
+/* ✅ GOOD: Modern responsive design with container queries (if supported) */
+@container (min-width: 400px) {
+  .modern-responsive {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+/* ❌ BAD: Legacy color formats */
+.legacy-colors {
+  color: #ff0000;
+  background-color: rgb(255, 0, 0);
+  border-color: rgba(255, 0, 0, 0.5);
+}
+
+/* ✅ GOOD: Modern color formats and features */
+.modern-colors {
+  color: hsl(0, 100%, 50%);
+  background-color: oklch(0.7 0.15 0);
+  border-color: color-mix(in srgb, red 50%, blue);
+}
+
+/* ❌ BAD: Legacy text styling */
+.legacy-text {
+  text-decoration: underline;
+  font-weight: bold;
+  font-style: italic;
+}
+
+/* ✅ GOOD: Modern text features */
+.modern-text {
+  text-decoration: underline wavy var(--primary-color);
+  font-weight: 600;
+  font-style: italic;
+  text-wrap: balance;
+  font-optical-sizing: auto;
+}
+
+/* ❌ BAD: Legacy animation with vendor prefixes */
+@-webkit-keyframes legacy-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes legacy-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.legacy-animation {
+  -webkit-animation: legacy-fade 0.3s ease-in-out;
+  animation: legacy-fade 0.3s ease-in-out;
+}
+
+/* ✅ GOOD: Modern animations and transitions */
+@keyframes modern-slide {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.modern-animation {
+  animation: modern-slide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease-out;
+}
+
+/* ❌ BAD: Legacy pseudo-selectors */
+.legacy-hover:hover {
+  background-color: #f0f0f0;
+}
+
+.legacy-nth-child:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+/* ✅ GOOD: Modern pseudo-selectors and logical properties */
+.modern-interactive {
+  background-color: light-dark(#f0f0f0, #2a2a2a);
+  
+  &:hover {
+    background-color: light-dark(#e0e0e0, #3a3a3a);
+  }
+  
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+/* ❌ BAD: Legacy layout techniques */
+.legacy-sidebar {
+  width: 300px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background: white;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.legacy-main {
+  margin-left: 300px;
+  padding: 20px;
+}
+
+/* ✅ GOOD: Modern layout with subgrid and logical properties */
+.modern-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  block-size: 100vh;
+  
+  .sidebar {
+    background: var(--secondary-color);
+    padding-block: 1rem;
+    padding-inline: 1rem;
+  }
+  
+  .main {
+    padding-block: 1rem;
+    padding-inline: 1rem;
+    container-type: inline-size;
+  }
+}

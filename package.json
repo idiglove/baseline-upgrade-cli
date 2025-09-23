@@ -1,0 +1,75 @@
+{
+  "name": "baseline-upgrade",
+  "version": "1.0.2",
+  "description": "CLI tool that scans codebases and suggests modern web feature upgrades using Baseline data",
+  "main": "dist/cli.js",
+  "bin": {
+    "baseline-upgrade": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:fast": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outdir=dist --external:commander",
+    "dev": "ts-node src/cli.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint:tests": "eslint tests/**/*.js --fix",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build",
+    "analyze:file": "node dist/cli.js file",
+    "analyze:file:badges": "node dist/cli.js file --update-readme",
+    "analyze:commit": "node dist/cli.js commit",
+    "analyze:commit:badges": "node dist/cli.js commit --update-readme",
+    "scan:badges": "node dist/cli.js scan --update-readme",
+    "update-badges": "node dist/cli.js update-readme --from-file analysis.json",
+    "create-readme": "node dist/cli.js update-readme --create --from-file analysis.json",
+    "show-badges": "node dist/cli.js show-badges --score 95 --javascript 10 --css 3"
+  },
+  "keywords": [
+    "cli",
+    "modernization",
+    "baseline",
+    "web-standards",
+    "javascript",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "files": [
+    "dist/",
+    "bin/",
+    "data-preparation/output/"
+  ],
+  "dependencies": {
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4",
+    "commander": "^14.0.0",
+    "web-features": "^2.47.0"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.28.4",
+    "@eslint/eslintrc": "^3.3.1",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "jest": "^30.1.3",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
