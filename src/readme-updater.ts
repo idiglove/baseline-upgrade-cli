@@ -85,7 +85,7 @@ ${scoreResult.baselineApproved ? '✅ **Baseline Approved**' : '⚠️ **Not Bas
 - **HTML**: ${scoreResult.suggestionsByCategory.html}
 - **Performance**: ${scoreResult.suggestionsByCategory.performance}
 
-### 📈 Baseline Status:
+### 📈 Baseline Suggestions:
 - **Stable Features**: ${scoreResult.suggestionsByBaselineStatus.high}
 - **Newly Available**: ${scoreResult.suggestionsByBaselineStatus.low}
 - **Limited Support**: ${scoreResult.suggestionsByBaselineStatus.limited}
