@@ -6,6 +6,14 @@
   "bin": {
     "baseline-upgrade": "./dist/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<your-team>/baseline-upgrade-cli.git"
+  },
+  "homepage": "https://github.com/<your-team>/baseline-upgrade-cli#readme",
+  "bugs": {
+    "url": "https://github.com/<your-team>/baseline-upgrade-cli/issues"
+  },
   "scripts": {
     "build": "tsc",
     "build:fast": "esbuild src/cli.ts --bundle --platform=node --target=node18 --outdir=dist --external:commander",
@@ -37,8 +45,8 @@
     "javascript",
     "typescript"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "sharshitsingh007@gmail.com",
+  "license": "MIT",
   "files": [
     "dist/",
     "bin/",
