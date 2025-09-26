@@ -22,3 +22,42 @@
 ### 🏆 Rank: Legacy Code Adventurer ⚔️
 Critical - Major modernization required 🔴
 
+## 🏆 Badge System
+
+The badges above show your codebase's modernization achievements. Here's what each badge means:
+
+### 🎯 Achievement Badges
+
+- **🟢 Baseline Approved** - Your codebase meets Baseline standards (score ≥ -5)
+- **🔵 Perfect Score** - Achieved a perfect score of 0 (no modernization suggestions needed)
+- **🟡 JavaScript Modernizer** - Fixed 5+ JavaScript modernization opportunities
+- **🟠 CSS Champion** - Fixed 3+ CSS modernization opportunities
+- **🟢 Performance Guru** - Fixed 2+ performance-related opportunities
+- **🟢 Error Free** - No high-severity errors found in your code
+- **⚪ HTML Modernizer** - Fixed HTML modernization opportunities
+- **🟣 Complete Overhaul** - Fixed 10+ total modernization opportunities
+- **🟢 Baseline Stable** - Uses 5+ Baseline stable web features
+- **🩷 Modern Web Explorer** - Uses newly available web features
+- **🔷 Code Cleaner** - Fixed 20+ suggestions with a score better than -50
+
+### 📊 How Badges Work
+
+Badges are automatically earned based on your codebase analysis results:
+- Run `baseline-upgrade scan` to analyze your project
+- Badges are awarded based on modernization progress and code quality
+- Add earned badges to your README to showcase your modern web standards compliance
+- Use badges in CI/CD to track modernization progress over time
+
+### 🚀 Getting Started
+
+```bash
+# Install the CLI
+npm install -g baseline-upgrade
+
+# Analyze your project
+baseline-upgrade scan .
+
+# See which badges you can earn
+baseline-upgrade --help
+```
+

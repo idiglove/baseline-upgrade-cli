@@ -73,7 +73,7 @@ export class Reporter {
     output.push(`  • Warnings: ${scoreResult.suggestionsBySeverity.warn}`);
     output.push(`  • Info: ${scoreResult.suggestionsBySeverity.info}`);
 
-    output.push('\n🌐 Baseline Status:');
+    output.push('\n🌐 Baseline Suggestions:');
     output.push(`  • Stable: ${scoreResult.suggestionsByBaselineStatus.high}`);
     output.push(`  • Newly Available: ${scoreResult.suggestionsByBaselineStatus.low}`);
     output.push(`  • Limited: ${scoreResult.suggestionsByBaselineStatus.limited}`);
