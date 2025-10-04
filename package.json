@@ -1,6 +1,6 @@
 {
   "name": "baseline-upgrade",
-  "version": "1.0.3",
+  "version": "1.0.7",
   "description": "CLI tool that scans codebases and suggests modern web feature upgrades using Baseline data",
   "main": "dist/cli.js",
   "bin": {
@@ -8,11 +8,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/<your-team>/baseline-upgrade-cli.git"
+    "url": "git+https://github.com/idiglove/baseline-upgrade-cli.git"
   },
-  "homepage": "https://github.com/<your-team>/baseline-upgrade-cli#readme",
+  "homepage": "https://github.com/idiglove/baseline-upgrade-cli#readme",
   "bugs": {
-    "url": "https://github.com/<your-team>/baseline-upgrade-cli/issues"
+    "url": "https://github.com/idiglove/baseline-upgrade-cli/issues"
   },
   "scripts": {
     "build": "tsc",
@@ -56,6 +56,8 @@
     "@babel/parser": "^7.28.4",
     "@babel/traverse": "^7.28.4",
     "commander": "^14.0.0",
+    "minimatch": "^10.0.3",
+    "prompts": "^2.4.2",
     "web-features": "^2.47.0"
   },
   "devDependencies": {
@@ -63,6 +65,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@types/babel__traverse": "^7.28.0",
     "@types/jest": "^30.0.0",
+    "@types/minimatch": "^5.1.2",
     "@types/node": "^24.3.1",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",

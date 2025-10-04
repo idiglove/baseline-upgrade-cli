@@ -10,6 +10,8 @@ import { execSync } from 'child_process';
 import { defaultScoringSystem, ScoreResult } from './scoring';
 import { defaultBadgeSystem, Badge } from './badges';
 import { defaultReadmeUpdater, ReadmeUpdateOptions } from './readme-updater';
+import { handleLeaderboardSubmission } from './leaderboard';
+import * as path from 'path';
 
 const program = new Command();
 
@@ -25,6 +27,7 @@ async function updateReadmeWithBadges(suggestions: any[], scoreResult?: ScoreRes
     const finalScoreResult = scoreResult || defaultScoringSystem.calculateScore(suggestions);
     const earnedBadges = defaultBadgeSystem.getEarnedBadges(finalScoreResult);
 
+    // Always update README if we have badges or a score result
     if (earnedBadges.length === 0 && finalScoreResult.totalScore === 0) {
       const updateOptions: ReadmeUpdateOptions = {
         badges: [],
@@ -34,15 +37,10 @@ async function updateReadmeWithBadges(suggestions: any[], scoreResult?: ScoreRes
       };
 
       const result = defaultReadmeUpdater.updateReadme(updateOptions);
-      if (result.success && options.verbose) {
+      if (result.success) {
         console.log('\n📝 Perfect score! Updated README with score badge.');
-      }
-      return;
-    }
-
-    if (earnedBadges.length === 0) {
-      if (options.verbose) {
-        console.log('No badges earned to add to README.');
+      } else if (options.verbose) {
+        console.log('ℹ️  ' + result.message);
       }
       return;
     }
@@ -58,10 +56,12 @@ async function updateReadmeWithBadges(suggestions: any[], scoreResult?: ScoreRes
     
     if (result.success) {
       console.log('\n📝 ' + result.message);
-      console.log('🏆 Earned Badges:');
-      earnedBadges.forEach(badge => {
-        console.log(`  • ${badge.name}`);
-      });
+      if (earnedBadges.length > 0) {
+        console.log('🏆 Earned Badges:');
+        earnedBadges.forEach(badge => {
+          console.log(`  • ${badge.name}`);
+        });
+      }
       console.log(`🎯 Score: ${finalScoreResult.totalScore}`);
     } else if (options.verbose) {
       console.log('ℹ️  ' + result.message);
@@ -87,6 +87,7 @@ program
   .option('--update-readme', 'automatically update README with earned badges')
   .option('--readme-overwrite', 'overwrite existing README content when updating')
   .option('--readme-backup', 'create backup of original README when updating')
+  .option('--no-leaderboard-prompt', 'skip the leaderboard submission prompt')
   .action(async (filepath: string, options) => {
     try {
       if (!fs.existsSync(filepath)) {
@@ -163,6 +164,11 @@ program
             backup: options.readmeBackup
           });
         }
+
+        // Handle leaderboard submission for file command
+        if (options.leaderboardPrompt !== false) {
+          await handleLeaderboardSubmission(reportData, path.dirname(filepath), earnedBadges || []);
+        }
       } else {
         const suggestions = engine.analyzeFile(filepath, content);
 
@@ -194,6 +200,11 @@ program
             backup: options.readmeBackup
           });
         }
+
+        // Handle leaderboard submission for file command
+        if (options.leaderboardPrompt !== false) {
+          await handleLeaderboardSubmission(reportData, path.dirname(filepath), earnedBadges || []);
+        }
       }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
@@ -213,6 +224,7 @@ program
   .option('--update-readme', 'automatically update README with earned badges')
   .option('--readme-overwrite', 'overwrite existing README content when updating')
   .option('--readme-backup', 'create backup of original README when updating')
+  .option('--no-leaderboard-prompt', 'skip the leaderboard submission prompt')
   .action(async (commit: string, options) => {
     try {
       if (options.verbose) {
@@ -292,6 +304,11 @@ program
           backup: options.readmeBackup
         });
       }
+
+      // Handle leaderboard submission for commit command
+      if (options.leaderboardPrompt !== false) {
+        await handleLeaderboardSubmission(reportData, '.', earnedBadges || []);
+      }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
@@ -307,8 +324,9 @@ program
   .option('-f, --format <type>', 'output format (text, json)', 'text')
   .option('--fix', 'automatically apply safe fixes')
   .option('--dry-run', 'preview fixes without applying them')
-  .option('--ignore <patterns>', 'comma-separated ignore patterns', 'node_modules/**,*.min.js,dist/**,build/**,.git/**,coverage/**')
-  .option('--extensions <exts>', 'comma-separated file extensions', '.js,.ts,.jsx,.tsx')
+  .option('--ignore <patterns>', 'comma-separated ignore patterns', 
+    'node_modules,dist,build,.git,coverage,.next,out,*.min.js,*.min.css,package-lock.json,yarn.lock')
+  .option('--extensions <exts>', 'comma-separated file extensions', '.js,.ts,.jsx,.tsx,.css')
   .option('--max-size <size>', 'maximum file size in KB', '1024')
   .option('--no-score', 'disable scoring system')
   .option('--no-badges', 'disable badge system')
@@ -316,6 +334,7 @@ program
   .option('--update-readme', 'automatically update README with earned badges')
   .option('--readme-overwrite', 'overwrite existing README content when updating')
   .option('--readme-backup', 'create backup of original README when updating')
+  .option('--no-leaderboard-prompt', 'skip the leaderboard submission prompt')
   .action(async (scanPath: string, options) => {
     try {
       if (options.verbose) {
@@ -335,9 +354,16 @@ program
 
       const scanResult = await scanner.scan(scanPath);
 
-      if (scanResult.errors.length > 0 && options.verbose) {
-        console.log('⚠️  Scan warnings:');
-        scanResult.errors.forEach(error => console.log(`   ${error}`));
+      // Only show ignore warnings in verbose mode
+      if (options.verbose && scanResult.errors.length > 0) {
+        const ignoreErrors = scanResult.errors.filter(error => error.includes('Ignored'));
+        if (ignoreErrors.length > 0) {
+          console.log('🚫 Ignored paths:');
+          ignoreErrors.slice(0, 10).forEach(error => console.log(`   ${error}`));
+          if (ignoreErrors.length > 10) {
+            console.log(`   ... and ${ignoreErrors.length - 10} more`);
+          }
+        }
       }
 
       if (scanResult.fileContents.length === 0) {
@@ -348,6 +374,7 @@ program
       if (options.verbose) {
         console.log(`📂 Found ${scanResult.fileContents.length} files to analyze`);
       }
+
 
       // Initialize rule engine
       const engine = new RuleEngine(defaultConfig.rules);
@@ -419,6 +446,7 @@ program
           }
         }
       }
+
       const scoreResult = options.score !== false ? defaultScoringSystem.calculateScore(allSuggestions) : undefined;
       const earnedBadges = options.badges !== false && scoreResult ? defaultBadgeSystem.getEarnedBadges(scoreResult) : undefined;
 
@@ -449,13 +477,34 @@ program
         console.log(output);
       }
 
-      if (options.updateReadme) {
-        await updateReadmeWithBadges(allSuggestions, scoreResult, {
-          verbose: options.verbose,
-          overwrite: options.readmeOverwrite,
-          backup: options.readmeBackup
-        });
+// In the scan command action, after analysis is complete:
+if (options.updateReadme) {
+  await updateReadmeWithBadges(allSuggestions, scoreResult, {
+    verbose: options.verbose,
+    overwrite: options.readmeOverwrite,
+    backup: options.readmeBackup
+  });
+}
+
+      // Handle leaderboard submission (unless explicitly disabled)
+      if (options.leaderboardPrompt !== false && !options.leaderboard) {
+        await handleLeaderboardSubmission(reportData, scanPath, earnedBadges || []);
       }
+
+      if (allSuggestions.length > 0 || scoreResult?.totalScore === 0) {
+  try {
+    await updateReadmeWithBadges(allSuggestions, scoreResult, {
+      verbose: options.verbose,
+      overwrite: options.readmeOverwrite,
+      backup: options.readmeBackup
+    });
+  } catch (error) {
+    if (options.verbose) {
+      console.log('⚠️  Could not update README:', error instanceof Error ? error.message : error);
+    }
+  }
+}
+
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
@@ -466,7 +515,7 @@ program
 program
   .command('score')
   .description('Calculate score from existing analysis results')
-  .argument('[file]', 'JSON file with analysis results', '')
+  .argument('[file]', 'JSON file with analysis results')
   .option('-f, --format <type>', 'output format (text, json)', 'text')
   .option('--update-readme', 'automatically update README with earned badges')
   .option('--readme-overwrite', 'overwrite existing README content when updating')
@@ -484,6 +533,15 @@ program
         const data = JSON.parse(await fs.promises.readFile(file, 'utf8'));
         suggestions = data.suggestions || [];
       } else {
+        // If no file provided and no stdin, show help
+        if (process.stdin.isTTY) {
+          console.log('❌ Please provide a JSON file with analysis results or pipe JSON data to stdin');
+          console.log('Usage examples:');
+          console.log('  baseline-upgrade score analysis.json');
+          console.log('  cat analysis.json | baseline-upgrade score');
+          process.exit(1);
+        }
+        
         let input = '';
         process.stdin.setEncoding('utf8');
         process.stdin.on('data', (chunk) => {
@@ -497,6 +555,9 @@ program
         if (input) {
           const data = JSON.parse(input);
           suggestions = data.suggestions || [];
+        } else {
+          console.error('❌ No input data received from stdin');
+          process.exit(1);
         }
       }
 
