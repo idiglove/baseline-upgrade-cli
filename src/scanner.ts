@@ -21,24 +21,27 @@ export interface ScanOptions {
 }
 
 export class FileScanner {
-  private ignorePatterns: RegExp[];
+  private ignorePatterns: string[];
   private extensions: Set<string>;
   private readContents: boolean;
   private maxFileSize: number;
 
   constructor(options: ScanOptions = {}) {
-    this.ignorePatterns = (
-      options.ignorePatterns || [
-        'node_modules/**',
-        '*.min.js',
-        'dist/**',
-        'build/**',
-        '.git/**',
-        'coverage/**',
-      ]
-    ).map(pattern => new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')));
+    this.ignorePatterns = options.ignorePatterns || [
+      'node_modules',
+      'dist',
+      'build',
+      '.git',
+      'coverage',
+      '.next',
+      'out',
+      '*.min.js',
+      '*.min.css',
+      'package-lock.json',
+      'yarn.lock'
+    ];
 
-    this.extensions = new Set(options.extensions || ['.js', '.ts', '.jsx', '.tsx']);
+    this.extensions = new Set(options.extensions || ['.js', '.ts', '.jsx', '.tsx', '.css']);
     this.readContents = options.readContents ?? false;
     this.maxFileSize = options.maxFileSize ?? 1024 * 1024; // 1MB default
   }
@@ -51,14 +54,18 @@ export class FileScanner {
       const stats = await fs.promises.stat(resolvedPath);
 
       if (stats.isFile()) {
-        if (this.isTargetFile(path.basename(resolvedPath))) {
+        if (this.isTargetFile(resolvedPath) && !this.shouldIgnore(resolvedPath)) {
           result.files.push(resolvedPath);
           
           if (this.readContents) {
             await this.readFileContent(resolvedPath, result);
           }
         } else {
-          result.errors.push(`File type not supported: ${resolvedPath}`);
+          if (this.shouldIgnore(resolvedPath)) {
+            result.errors.push(`Ignored file: ${resolvedPath}`);
+          } else {
+            result.errors.push(`File type not supported: ${resolvedPath}`);
+          }
         }
       } else if (stats.isDirectory()) {
         await this.scanDirectory(resolvedPath, result);
@@ -73,6 +80,12 @@ export class FileScanner {
   }
 
   private async scanDirectory(dirPath: string, result: ScanResult): Promise<void> {
+    // Check if this directory should be ignored
+    if (this.shouldIgnore(dirPath)) {
+      result.errors.push(`Ignored directory: ${dirPath}`);
+      return;
+    }
+
     let entries: fs.Dirent[];
 
     try {
@@ -84,15 +97,20 @@ export class FileScanner {
 
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
-      const relativePath = path.relative(process.cwd(), fullPath);
 
-      if (this.shouldIgnore(relativePath)) {
+      // Check if this file/directory should be ignored
+      if (this.shouldIgnore(fullPath)) {
+        if (entry.isDirectory()) {
+          result.errors.push(`Ignored directory: ${fullPath}`);
+        } else {
+          result.errors.push(`Ignored file: ${fullPath}`);
+        }
         continue;
       }
 
       if (entry.isDirectory()) {
         await this.scanDirectory(fullPath, result);
-      } else if (entry.isFile() && this.isTargetFile(entry.name)) {
+      } else if (entry.isFile() && this.isTargetFile(fullPath)) {
         result.files.push(fullPath);
 
         if (this.readContents) {
@@ -124,11 +142,43 @@ export class FileScanner {
   }
 
   private shouldIgnore(filePath: string): boolean {
-    return this.ignorePatterns.some(pattern => pattern.test(filePath));
+    const normalizedPath = filePath.replace(/\\/g, '/').toLowerCase();
+    
+    for (const pattern of this.ignorePatterns) {
+      const normalizedPattern = pattern.toLowerCase();
+      
+      // Simple and reliable pattern matching
+      if (normalizedPattern.includes('*')) {
+        // Handle wildcard patterns like "*.min.js"
+        const regexPattern = normalizedPattern
+          .replace(/\*/g, '.*')
+          .replace(/\?/g, '.');
+        const regex = new RegExp(regexPattern);
+        if (regex.test(path.basename(normalizedPath))) {
+          return true;
+        }
+      } else {
+        // Simple directory/file name matching
+        if (normalizedPath.includes(`/${normalizedPattern}/`) || 
+            normalizedPath.endsWith(`/${normalizedPattern}`) ||
+            normalizedPath.includes(`\\${normalizedPattern}\\`) ||
+            normalizedPath.endsWith(`\\${normalizedPattern}`)) {
+          return true;
+        }
+        
+        // Also check the basename
+        const basename = path.basename(normalizedPath);
+        if (basename === normalizedPattern) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 
-  private isTargetFile(fileName: string): boolean {
-    const ext = path.extname(fileName);
+  private isTargetFile(filePath: string): boolean {
+    const ext = path.extname(filePath).toLowerCase();
     return this.extensions.has(ext);
   }
 }
